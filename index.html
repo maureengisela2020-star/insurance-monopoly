@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>1-1 Insurance Monopoly</title>
 <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <style>
 :root{--bg:#0b1020;--panel:#121a33;--line:#243056;--tx:#e2e8f0}
 html,body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;-webkit-tap-highlight-color:transparent}
@@ -12,7 +13,7 @@ body{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset
 .gb{display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(5,1fr);gap:3px;aspect-ratio:1}
 .tile{position:relative;border-radius:8px;background:var(--panel);border:1px solid var(--line);border-top:3px solid var(--c);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:9px;line-height:1.15;text-align:center;padding:2px 1px 9px;overflow:hidden}
 .tile .ic{font-size:19px}
-.tile.on{background:#1b2650}
+.tile.on{background:var(--on,#1b2650)}
 .tk{position:absolute;bottom:2px;left:0;right:0;display:flex;justify-content:center;gap:3px}
 .tk i{width:10px;height:10px;border-radius:50%;box-shadow:0 0 7px 2px currentColor;background:currentColor}
 @keyframes pop{from{transform:scale(.5) rotate(-90deg)}to{transform:none}}
@@ -20,6 +21,16 @@ body{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset
 #portal{background:#fff;color:#111}
 #portal input[type=range]{accent-color:#cc0000;width:100%}
 .hd{font-style:italic;font-weight:900;letter-spacing:-.02em}
+html[data-lap="1"]{--bg:#0b1020;--panel:#121a33;--line:#243056;--on:#1b2650}
+html[data-lap="2"]{--bg:#170a2b;--panel:#26123f;--line:#d97706;--on:#4c1d95}
+html[data-lap="3"]{--bg:#07161c;--panel:#0f2730;--line:#c9a227;--on:#16414d}
+html,body{transition:background .9s}
+.tile{transition:background .7s,border-color .7s}
+.gb{border-radius:12px;box-shadow:0 0 0 2px var(--line),0 0 26px -8px var(--line);transition:box-shadow .9s}
+main .bg-slate-900{background:var(--panel)}
+main .border-slate-700{border-color:var(--line)}
+.lapcard{background:rgba(5,8,20,.93);border:2px solid;border-radius:20px;padding:20px 28px;text-align:center;animation:lapin 1.9s ease both}
+@keyframes lapin{0%{opacity:0;transform:scale(.7)}15%{opacity:1;transform:scale(1)}85%{opacity:1}100%{opacity:0;transform:scale(1.06)}}
 .cube{width:46px;height:46px;position:relative;transform-style:preserve-3d}
 .cf{position:absolute;inset:0;background:linear-gradient(135deg,#fff,#cbd5e1);border-radius:9px;display:grid;grid:repeat(3,1fr)/repeat(3,1fr);padding:6px;box-shadow:inset 0 0 6px rgba(0,0,0,.25)}
 .cf i{width:8px;height:8px;border-radius:50%;margin:auto;background:#0f172a}
@@ -41,6 +52,7 @@ body{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset
 <div id="portal" class="hidden fixed inset-0 z-50 overflow-auto"></div>
 <div id="apply" class="hidden fixed inset-0 z-[60] bg-black/70 flex items-center justify-center p-4"></div>
 <div id="toast" role="status" class="hidden fixed top-16 left-1/2 -translate-x-1/2 z-[70] w-[calc(100%-1.5rem)] max-w-[420px] pointer-events-none rounded-xl border-2 px-4 py-3 text-sm bg-slate-900/95 shadow-2xl" style="border-color:#ec4899"></div>
+<div id="lapfx" class="hidden fixed inset-0 z-[65] pointer-events-none flex items-center justify-center"></div>
 
 <script>
 const $=id=>document.getElementById(id);
@@ -81,7 +93,43 @@ const SC=[
 {at:[12],t:['Cram School Overwork & High Fever','補習過勞突發高燒'],s:['After cram school and an all-nighter, a sudden high fever sends you to the clinic for an IV drip.','補習加熬夜後突然高燒,到診所打點滴。'],c:6000},
 {at:[6,14],t:['Night Market Food Poisoning','夜市食物中毒'],s:['Something at the night market did not agree with you. Emergency outpatient visit at midnight.','夜市小吃吃壞肚子,半夜掛急診門診。'],c:3500},
 {at:[6,14],t:['Cafeteria Wet Floor Slip','學生餐廳地板濕滑'],s:['You slip on a wet cafeteria floor and hurt your wrist. X-ray and treatment follow.','在學生餐廳滑倒傷到手腕,需要X光與治療。'],c:8000},
-{at:[1,8,14],t:['Scooter Collision at Intersection','路口機車擦撞'],s:['A car runs the light and clips your scooter at an intersection. Emergency care is needed.','路口被闖紅燈的汽車撞上機車,必須緊急送醫。'],c:12000}];
+{at:[1,8,14],t:['Scooter Collision at Intersection','路口機車擦撞'],s:['A car runs the light and clips your scooter at an intersection. Emergency care is needed.','路口被闖紅燈的汽車撞上機車,必須緊急送醫。'],c:12000},
+{at:[1,8],t:['Pothole Wipeout After Night Class','夜間下課撞上路面坑洞'],s:['A hidden pothole on the ride home throws you off the scooter. Wrist, helmet and bike all take a hit.','回家路上沒看見路面坑洞,人車摔出去,手腕、安全帽與機車都受損。'],c:7000},
+{at:[1,8,14],t:['Stray Dog Dash','流浪狗衝出馬路'],s:['A stray dog darts across the road and you brake hard. The scooter skids and you scrape your knee and arm.','流浪狗突然衝出馬路,你急煞後機車打滑,膝蓋與手臂擦挫傷。'],c:5500},
+{at:[1,8,14],t:['Car Door Crash','開車門撞擊'],s:['A parked car door swings open right in front of you. You crash and need emergency treatment.','路邊停車突然打開車門,你閃避不及撞上,需要緊急處置。'],c:7500},
+{at:[10],t:['Badminton Shoulder Strain','羽球拉傷肩膀'],s:['A big smash at the sports hall leaves your shoulder strained. Physio sessions are mostly out of pocket.','在體育館殺球用力過猛拉傷肩膀,物理治療多為自費。'],c:4000},
+{at:[10],t:['Morning Track Knee Pain','晨跑操場膝蓋疼痛'],s:['Pushing too hard on the morning run inflames your knee. Orthopedic visit plus rehab.','晨跑逞強過頭導致膝蓋發炎,需要骨科門診與復健。'],c:5000},
+{at:[12],t:['Insomnia & Stomach Ulcer Flare','失眠與胃潰瘍發作'],s:['Midterm stress, coffee and skipped meals trigger sharp stomach pain. Gastro clinic and an endoscopy.','期中壓力、咖啡與不吃飯讓胃痛發作,需要腸胃科門診與胃鏡檢查。'],c:5500},
+{at:[12,6],t:['Migraine & Eye Strain','偏頭痛與眼睛疲勞'],s:['Days of screen time and cramming bring a pounding migraine. Neurology and eye clinic fees pile up.','連日盯螢幕和苦讀引發劇烈偏頭痛,神經內科與眼科費用累積。'],c:3200},
+{at:[6,14],t:['Seafood Hotpot Allergy','火鍋海鮮過敏'],s:['A seafood hotpot with friends triggers a sudden allergic reaction. Emergency room and observation.','和朋友吃海鮮火鍋突然過敏發作,送急診並留院觀察。'],c:6500},
+{at:[6,14],t:['Dorm Ladder Fall','宿舍床梯跌落'],s:['You miss a step on the dorm bunk ladder at night. Hip bruising and imaging tests.','半夜踩空宿舍上下鋪的梯子摔下,髖部挫傷並做影像檢查。'],c:9000}];
+// Harm severity is random: costs scale and are clamped to NT$3,000-12,000
+const SV=[['Minor','輕微',.55],['Moderate','中度',1],['Severe','嚴重',1.4]];
+const SF=[
+{t:['Near Miss!','驚險閃過!'],s:['You swerve just in time. Heart racing, but unharmed. +1 lifestyle point.','你及時閃開,心跳加速但毫髮無傷。生活點數 +1。'],pts:1},
+{t:['Friend Treats You','朋友請客'],s:['A classmate spots you and buys you a bubble tea. You save NT$150.','同學看到你,請你喝珍奶,省下 NT$150。'],cash:150},
+{t:['Found a Coupon','撿到優惠券'],s:['A campus app drops a convenience-store coupon. +NT$200.','校園App發了超商優惠券,賺到 NT$200。'],cash:200},
+{t:['Study Group Win','讀書會小勝利'],s:['Your study group nails the practice quiz. +2 lifestyle points.','你們的讀書會模擬測驗全員過關。生活點數 +2。'],pts:2},
+{t:['Good Sleep Streak','規律作息獎勵'],s:['Seven early nights in a row. You feel great. +1 lifestyle point.','連續七天早睡,精神超好。生活點數 +1。'],pts:1},
+{t:['Tutoring Tip','家教小費'],s:['A parent adds a tip after your tutoring session. +NT$500.','家長在家教結束後多給了小費。+NT$500。'],cash:500},
+{t:['Lucky Raffle','校園抽獎'],s:['You win a meal voucher at the campus raffle. +NT$300.','你在校園抽獎抽中餐券。+NT$300。'],cash:300}];
+let SEEN=[];try{SEEN=JSON.parse(localStorage.getItem('imSeen')||'[]')}catch(e){}
+// Prefers scenarios not yet used this game, then ones never seen in earlier playthroughs
+function pick(pool){
+  let c=pool.filter(x=>!G.used.includes(x.t[0]));if(!c.length)c=pool;
+  const f=c.filter(x=>!SEEN.includes(x.t[0])),a=f.length?f:c,x=a[Math.floor(Math.random()*a.length)];
+  G.used.push(x.t[0]);
+  if(!SEEN.includes(x.t[0])){SEEN.push(x.t[0]);try{localStorage.setItem('imSeen',JSON.stringify(SEEN))}catch(e){}}
+  return x}
+async function safe(p,T,nm){
+  const fx=Math.random()<.6?pick(SF.filter(x=>!x.lp||x.lp.includes(lapOf(p)+1))):null;
+  if(!fx){lg(p,nm[0]+': safe.',nm[1]+':平安無事。');return ev(p,'✅',nm,T[5])}
+  p.cash+=fx.cash||0;p.pts+=fx.pts||0;
+  lg(p,fx.t[0]+(fx.cash?' +'+m(fx.cash):'')+(fx.pts?' +'+fx.pts+' pts':'')+'.',fx.t[1]+(fx.cash?' +'+m(fx.cash):'')+(fx.pts?' 生活點數 +'+fx.pts:'')+'。');
+  return ev(p,'🍀',fx.t,fx.s)}
+function riskNote(){const N=[['Calm','平靜'],['Normal','一般'],['Stormy','多事']][G.rm<.95?0:G.rm<1.15?1:2];
+  G.log.unshift([`Campus risk this semester: ${N[0]}`,`本學期校園風險:${N[1]}`]);
+  toast(`<div class="font-bold">🌦️ ${b('Campus risk this semester','本學期校園風險')}: ${L(N)}</div><div class="text-xs text-slate-300 mt-0.5">${b('Accident odds change every game.','每場遊戲的意外機率都不同。')}</div>`)}
 
 const pn=p=>p.ai?['AI','AI 對手']:['Player '+p.i,'玩家 '+p.i];
 const gp=i=>i<=4?[1,i+1]:i<=7?[i-3,5]:i<=12?[5,13-i]:[17-i,1];
@@ -89,18 +137,51 @@ const cost=()=>Math.round((3000+Math.random()*9000)/100)*100;
 function lg(p,e,z){G.n=(G.n||0)+1;G.log.unshift([pn(p)[0]+': '+e,pn(p)[1]+':'+z]);G.log.length=Math.min(G.log.length,30)}
 
 /* ---------- Render ---------- */
+/* ---------- Dynamic lap system ---------- */
+const LAPS=[
+ {ic:'🎒',c:'#06b6d4',n:['Lap 1: Campus Freshman','第 1 圈:校園新鮮人'],f:['Scooters, sports & campus life','騎車通勤、運動與校園適應']},
+ {ic:'📚',c:'#f59e0b',n:['Lap 2: Midterm Stress','第 2 圈:期中壓力'],f:['Cramming, burnout & part-time hustle','期中苦讀、倦怠與打工衝刺']},
+ {ic:'🎓',c:'#facc15',n:['Lap 3: Future Ready','第 3 圈:邁向未來'],f:['Graduation prep & real-world resilience','畢業準備與社會韌性']}];
+const lapOf=p=>Math.min(p.laps,2);
+const PM=[1,1.1,1.25],LC=[1,1.05,1.2],JM=[1,1.3,1.5],LSV=[[.35,.8],[.3,.75],[.2,.6]];
+const WF=[[['Scholarship','獎學金'],['AI pushes a notice: you won a campus study grant!','AI推播通知:你獲得校內獎學金!'],2000],
+ [['Hustle Bonus','打工加碼'],['Your manager praises your reliability and adds a shift bonus.','店長稱讚你的穩定表現,加發班表獎金。'],2500],
+ [['Internship Sign-On','實習簽約金'],['A company offers a graduation-year internship with a sign-on bonus.','一間公司提供畢業年實習並發放簽約金。'],4000]];
+const EX={'Late-Night Basketball Ankle Sprain':[1,2],'Cram School Overwork & High Fever':[2],'Cafeteria Wet Floor Slip':[1],'Stray Dog Dash':[1],'Badminton Shoulder Strain':[1],'Dorm Ladder Fall':[1],'Insomnia & Stomach Ulcer Flare':[2],'Seafood Hotpot Allergy':[2,3],'Rainy Scooter Slip near YunTech':[1,2]};
+SC.push(
+{at:[1,8,14],lp:[2],t:['Delivery Shift Crash','外送打工路上擦撞'],s:['Rushing a food-delivery side gig between classes, you clip a curb and fall hard.','課餘兼職外送趕單,擦到路緣重重摔車。'],c:9500},
+{at:[6,14],lp:[2],t:['Cafe Shift Burn','咖啡店打工燙傷'],s:['A hot water splash during the weekend rush leaves a second-degree burn on your hand.','週末尖峰時熱水濺出,手部二度燙傷。'],c:4500},
+{at:[12,14],lp:[2],t:['Stress Chest Pain Scare','壓力性胸悶急診'],s:['Midterm stress and no sleep cause sudden chest tightness. ER tests rule out anything serious.','期中壓力與睡眠不足造成突然胸悶,急診檢查後排除重大問題。'],c:6500},
+{at:[12],lp:[2],t:['Exam Anxiety Clinic Visit','考前焦慮身心科門診'],s:['Severe exam anxiety brings palpitations and insomnia. Clinic visits add up.','考前焦慮嚴重,心悸又失眠,身心科門診費用累積。'],c:3600},
+{at:[1,8,14],lp:[3],t:['Internship Commute Crash','實習通勤車禍'],s:['Rushing to an internship interview on the expressway, a truck sideswipes your scooter.','趕去實習面試時,在快速道路被大貨車擦撞。'],c:11000},
+{at:[6,14],lp:[3],t:['Graduation Trip Food Poisoning','畢業旅行食物中毒'],s:['A street-food dinner on the graduation trip ends with a night at the hospital.','畢業旅行吃路邊攤,晚上就被送進醫院。'],c:5000},
+{at:[12],lp:[3],t:['Thesis Overload & Back Pain','趕論文過勞腰痠背痛'],s:['Weeks hunched over your thesis leave you with severe back pain and therapy bills.','連續數週駝背趕論文,腰背劇痛,需要復健治療。'],c:6000},
+{at:[12,14],lp:[3],t:['Job-Hunt Sleepless Collapse','求職連環面試倒下'],s:['Back-to-back interviews and zero sleep end with you fainting and a hospital stay.','連環面試加上徹夜未眠,你昏倒送醫並住院觀察。'],c:8500},
+{at:[10,12],lp:[3],t:['Moving Day Back Injury','搬家扭傷腰'],s:['Carrying boxes out of the dorm, you twist your back. Orthopedic care and therapy follow.','從宿舍搬箱子下樓時扭到腰,需要骨科與復健。'],c:7000});
+SC.forEach(x=>x.lp=x.lp||EX[x.t[0]]||[1,2,3]);
+SF.push(
+{t:['Midterm Curve Win','期中考加分'],s:['The professor curves the midterm upward. +2 lifestyle points.','教授把期中考成績調高。生活點數 +2。'],pts:2,lp:[2]},
+{t:['Hustle Tip Jar','打工小費罐'],s:['The tip jar is full after a busy shift. +NT$400.','忙碌班表後小費罐滿滿,+NT$400。'],cash:400,lp:[2]},
+{t:['Resume Praise','履歷獲好評'],s:['A career advisor loves your resume and gives a workshop stipend. +NT$400.','職涯顧問大讚你的履歷,發給工作坊津貼 +NT$400。'],cash:400,lp:[3]},
+{t:['Graduation Photo Day','畢業照日'],s:['Friends, gowns and great photos. +2 lifestyle points.','和朋友穿學士服拍畢業照。生活點數 +2。'],pts:2,lp:[3]});
+function scPool(pos,l){const a=SC.filter(x=>x.lp.includes(l)&&(pos==2||x.at.includes(pos)));return a.length?a:SC.filter(x=>pos==2||x.at.includes(pos))}
+function lapBadge(){const p=G.P[G.t],l=LAPS[lapOf(p)];return `<div class="inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded-full text-[10px] font-bold" style="background:${l.c}22;color:${l.c};border:1px solid ${l.c}">${l.ic} ${L(l.n)}</div>`}
+let lT;
+function lapFx(p){if(p.laps>=3)return;const l=LAPS[p.laps],e=$('lapfx');sfx('lap');
+  e.innerHTML=`<div class="lapcard" style="border-color:${l.c};box-shadow:0 0 40px ${l.c}88"><div class="text-5xl">${l.ic}</div><div class="text-[11px] tracking-widest mt-1" style="color:${l.c}">${b('NEW LAP','進入新一圈')}</div><div class="text-2xl font-black mt-1">${L(l.n)}</div><div class="text-xs text-slate-300 mt-1">${L(l.f)}</div></div>`;
+  e.classList.remove('hidden');clearTimeout(lT);lT=setTimeout(()=>e.classList.add('hidden'),1900)}
 const FR={1:[0,0],2:[0,-90],3:[-90,0],4:[90,0],5:[0,90],6:[0,180]};
 const PIPS={1:[5],2:[1,9],3:[1,5,9],4:[1,3,7,9],5:[1,3,5,7,9],6:[1,3,4,6,7,9]};
 function diceHTML(){const f=G.face||1,[rx,ry]=FR[f];
   return `<div style="perspective:260px;height:52px" class="flex items-center"><div id="cube" class="cube" style="transform:rotateX(${rx}deg) rotateY(${ry}deg)">${[1,2,3,4,5,6].map(k=>`<div class="cf f${k}">${[1,2,3,4,5,6,7,8,9].map(c=>PIPS[k].includes(c)?'<i></i>':'<b></b>').join('')}</div>`).join('')}</div></div>
   <div class="text-[11px] font-bold h-3.5">${G.d?b('Rolled ','點數 ')+G.d:''}</div>`}
 function render(){
-  let h=`<header class="sticky top-0 z-30 flex items-center justify-between px-3 py-2 bg-[#0b1020]/95 border-b border-slate-700">
-  <div><div class="font-extrabold text-[15px]">🛡️ ${u('title')}</div>${G?`<div class="text-[10px] text-slate-400">${L(U.lap)} ${b('','')}${Math.min(G.P[G.t].laps+1,3)}/3 ${b('','圈')}</div>`:''}</div>
-  <button onclick="tl()" aria-label="Language" class="flex text-xs font-bold rounded-full border border-slate-600 overflow-hidden">
-  <span class="px-3 py-1.5 ${lang=='en'?'bg-cyan-500 text-slate-900':''}">EN</span><span class="px-3 py-1.5 ${lang=='zh'?'bg-cyan-500 text-slate-900':''}">中文</span></button></header>`;
+  let h=`<header class="sticky top-0 z-30 flex items-center justify-between px-3 py-2 border-b" style="background:var(--bg);border-color:var(--line)">
+  <div><div class="font-extrabold text-[15px]">🛡️ ${u('title')}</div>${G?lapBadge():''}</div>
+  <div class="flex items-center gap-2"><button onclick="mute()" aria-label="Sound" class="text-lg leading-none">${muted?'🔇':'🔊'}</button><button onclick="tl()" aria-label="Language" class="flex text-xs font-bold rounded-full border border-slate-600 overflow-hidden">
+  <span class="px-3 py-1.5 ${lang=='en'?'bg-cyan-500 text-slate-900':''}">EN</span><span class="px-3 py-1.5 ${lang=='zh'?'bg-cyan-500 text-slate-900':''}">中文</span></button></div></header>`;
   if(!G){$('app').innerHTML=h;return}
-  const cp=G.P[G.t];
+  const cp=G.P[G.t];document.documentElement.dataset.lap=lapOf(cp)+1;
   h+=`<main class="p-2"><div class="gb">`;
   TL.forEach((t,i)=>{const [r,c]=gp(i),here=G.P.filter(p=>p.pos==i);
     h+=`<div class="tile ${here.some(p=>p===cp)?'on':''}" style="grid-area:${r}/${c};--c:${COL[t[0]]}"><span class="ic">${t[1]}</span><span>${L(t[2])}</span><span class="absolute top-0 left-1 text-[8px] text-slate-500">${i+1}</span><div class="tk">${here.map(p=>`<i style="color:${C[p.i-1]}"></i>`).join('')}</div></div>`});
@@ -110,7 +191,7 @@ function render(){
    ${diceHTML()}
    <button onclick="roll()" ${busy||cp.ai?'disabled':''} class="px-5 py-2 rounded-xl font-bold text-sm text-slate-900 disabled:opacity-40" style="background:${C[G.t]}">${cp.ai&&busy?u('aiTurn'):u('roll')}</button></div></div>
   <section class="grid grid-cols-2 gap-2 mt-2">`;
-  G.P.forEach((p,k)=>{h+=`<div class="rounded-xl p-2.5 bg-slate-900 border-2" style="border-color:${G.t==k&&!p.done?C[k]:'#243056'}">
+  G.P.forEach((p,k)=>{h+=`<div class="rounded-xl p-2.5 bg-slate-900 border-2" style="border-color:${G.t==k&&!p.done?C[k]:'var(--line)'}">
    <div class="flex justify-between text-xs font-bold" style="color:${C[k]}"><span>${L(pn(p))}${p.done?' ✔':''}</span><span class="${p.ins?'':'text-slate-500'}">${p.ins?'🛡️ '+u('on'):u('off')}</span></div>
    <div class="text-lg font-extrabold">${m(p.cash)}</div>
    <div class="text-[10px] text-slate-400">${b('Lap ','第 ')}${Math.min(p.laps+1,3)}/3 · ⭐ ${p.pts}</div></div>`});
@@ -129,6 +210,7 @@ function ask(ic,tt,bd,bt,auto){return new Promise(res=>{
 let tT;
 function toast(h){const t=$('toast');t.innerHTML=h;t.classList.remove('hidden');clearTimeout(tT);tT=setTimeout(()=>t.classList.add('hidden'),2000)}
 function ev(p,ic,tt,bd){
+  sfx(SND[ic]);
   if(!p.ai)return ask(ic,tt,bd,[[U.ok,1]]);
   const r=G.n>G.n0?L(G.log[0]).replace(/^[^:\uff1a]*[:\uff1a]\s*/,''):L(bd);
   toast(`<div class="font-bold" style="color:${C[1]}">${ic} ${L(pn(p))} ${b('landed on','停在')} ${L(TL[p.pos][2])}</div><div class="text-xs text-slate-300 mt-0.5">${r}</div>`);
@@ -139,19 +221,19 @@ function startM(){modalFn=()=>modal(`<div class="text-center"><div class="text-5
 <button onclick="init(1)" class="w-full mt-4 py-3 rounded-xl font-bold bg-cyan-500 text-slate-900">🤖 ${b('1 Player vs AI','單人對戰 AI')}</button>
 <button onclick="init(2)" class="w-full mt-2 py-3 rounded-xl font-bold bg-pink-500 text-slate-900">👥 ${b('2 Players · Pass-and-Play','雙人同機輪流')}</button>
 <p class="text-[11px] mt-3"><span style="color:${C[0]}">● ${b('Player 1','玩家 1')}</span> &nbsp; <span style="color:${C[1]}">● ${b('Player 2 / AI','玩家 2 / AI')}</span></p></div>`);modalFn()}
-function init(k){mode=k;busy=false;
-  G={P:[1,2].map(i=>({i,ai:k==1&&i==2,cash:8000,pos:0,laps:0,ins:false,pts:0,cl:0,pd:0,done:false})),t:0,d:0,log:[]};
-  closeM();lg(G.P[0],'Game start! NT$8,000 each.','遊戲開始!每人起始 NT$8,000。');render()}
+function init(k){ac();mode=k;busy=false;
+  G={P:[1,2].map(i=>({i,ai:k==1&&i==2,cash:8000,pos:0,laps:0,ins:false,pts:0,cl:0,pd:0,done:false})),t:0,d:0,log:[],used:[],rm:.8+Math.random()*.6};
+  closeM();riskNote();lg(G.P[0],'Game start! NT$8,000 each.','遊戲開始!每人起始 NT$8,000。');render()}
 
 /* ---------- Game flow ---------- */
 async function roll(){
   if(busy||!G)return;busy=true;const p=G.P[G.t];
-  const d=1+Math.floor(Math.random()*6),[rx,ry]=FR[d];G.d=0;render();
+  sfx('roll');const d=1+Math.floor(Math.random()*6),[rx,ry]=FR[d];G.d=0;render();
   const cu=$('cube');cu.style.transition='none';void cu.offsetWidth;
   cu.style.transition='transform .8s cubic-bezier(.12,.75,.2,1)';
   cu.style.transform=`rotateX(${rx+720}deg) rotateY(${ry+1080}deg)`;
   await sleep(850);G.d=d;G.face=d;render();await sleep(250);
-  for(let s=0;s<G.d;s++){p.pos++;if(p.pos>=16){p.pos=0;p.laps++;p.cash+=8000;
+  for(let s=0;s<G.d;s++){p.pos++;if(p.pos>=16){p.pos=0;p.laps++;p.cash+=8000;lapFx(p);
       lg(p,'Passed START: +NT$8,000 allowance.','經過起點:領取生活費 +NT$8,000。');
       if(p.ins){p.cash-=200;p.pd+=200;lg(p,'Cardif premium -NT$200 (per lap).','Cardif 保費 -NT$200(每圈)。')}
       render();if(p.laps>=3)break}
@@ -164,7 +246,7 @@ async function roll(){
   if(G.P[G.t].ai){busy=true;render();await sleep(700);busy=false;roll()}
 }
 async function hit(p,pos){
-  const pool=pos==2?SC:SC.filter(x=>x.at.includes(pos)),sc=pool[Math.floor(Math.random()*pool.length)],t=sc.t,story=sc.s,c=sc.c;
+  const sc=pick(scPool(pos,lapOf(p)+1)),r=Math.random(),sv=SV[r<LSV[lapOf(p)][0]?0:r<LSV[lapOf(p)][1]?1:2],t=[sc.t[0]+' ('+sv[0]+')',sc.t[1]+'('+sv[1]+')'],story=sc.s,c=Math.min(12000,Math.max(3000,Math.round(sc.c*sv[2]*LC[lapOf(p)]*(.9+Math.random()*.2)/100)*100));
   if(p.ins){p.cl+=c;lg(p,`${t[0]}: Cardif paid ${m(c)} in full. Loss NT$0.`,`${t[1]}:Cardif 全額理賠 ${m(c)},損失 NT$0。`);
     await ev(p,'🛡️',t,[story[0]+` Cardif pays 100% (${m(c)}). Your loss: NT$0.`,story[1]+` Cardif 100% 理賠(${m(c)}),你的損失:NT$0。`])}
   else{p.cash-=c;lg(p,`${t[0]}: out-of-pocket -${m(c)}.`,`${t[1]}:自費支出 -${m(c)}。`);
@@ -173,11 +255,11 @@ async function hit(p,pos){
 async function land(p){
   G.n0=G.n||0;const T=TL[p.pos],ty=T[0],nm=T[2];
   if(ty=='risk'||ty=='gap'){
-    if(Math.random()<T[3])await hit(p,p.pos);
-    else{if(ty=='risk'&&p.pos==10){}lg(p,nm[0]+': safe.',nm[1]+':平安無事。');await ev(p,'✅',nm,T[5])}}
+    if(Math.random()<T[3]*G.rm*PM[lapOf(p)])await hit(p,p.pos);
+    else await safe(p,T,nm);}
   else if(ty=='chance'){const r=Math.random();
-    if(r<.35)await hit(p,2);
-    else if(r<.6){p.cash+=2000;lg(p,'AI event: scholarship +NT$2,000.','AI事件:獲得獎學金 +NT$2,000。');await ev(p,'🎓',TL[2][2],['AI pushes a notice: you won a campus study grant! +NT$2,000.','AI推播通知:你獲得校內獎學金!+NT$2,000。'])}
+    const ac=.35*G.rm*PM[lapOf(p)];if(r<ac)await hit(p,2);
+    else if(r<ac+.25){const w=WF[lapOf(p)];p.cash+=w[2];lg(p,'AI event: '+w[0][0]+' +'+m(w[2])+'.','AI事件:'+w[0][1]+' +'+m(w[2])+'。');await ev(p,'🎓',TL[2][2],[w[1][0]+' +'+m(w[2])+'.',w[1][1]+' +'+m(w[2])+'。'])}
     else{lg(p,'AI event: a calm day.','AI事件:平靜的一天。');await ev(p,'☀️',TL[2][2],['The AI risk radar finds nothing today. Stay alert!','AI風險雷達今天沒有警示,繼續保持警覺!'])}}
   else if(ty=='hub'){
     if(p.ins)await ev(p,'🛡️',nm,['Cardif Youth Coverage is active. NT$200 is deducted each lap at START.','Cardif 青年保障已啟用,每圈經過起點自動扣 NT$200。']);
@@ -185,7 +267,7 @@ async function land(p){
       if(yes){p.ins=true;lg(p,'Activated Cardif coverage.','啟用 Cardif 保障。')}else lg(p,'Skipped insurance.','選擇不投保。')}}
   else if(ty=='safe'){p.pts+=2;lg(p,'Health Center check-up: +2 lifestyle pts.','健康中心檢查:生活點數 +2。');await ev(p,'🏥',nm,['Free basic care and a health check. Safe zone! +2 lifestyle points.','免費基礎診療與健康檢查,安全區!生活點數 +2。'])}
   else if(ty=='sport'){p.pts+=1;lg(p,'Night basketball: +1 lifestyle pt.','夜間打球:生活點數 +1。');await ev(p,'🏀',nm,['A fun late-night game with friends. +1 lifestyle point.','和朋友夜間打球很開心,生活點數 +1。'])}
-  else if(ty=='job'){p.cash+=T[3];lg(p,`Part-time income +${m(T[3])}.`,`打工收入 +${m(T[3])}。`);await ev(p,'💰',nm,[`You earned ${m(T[3])}.`,`你賺到 ${m(T[3])}。`])}
+  else if(ty=='job'){const a=Math.round(T[3]*JM[lapOf(p)]/100)*100;p.cash+=a;lg(p,`Part-time income +${m(a)}.`,`打工收入 +${m(a)}。`);await ev(p,'💰',nm,[`You earned ${m(a)}.`,`你賺到 ${m(a)}。`])}
   else if(ty=='market'){p.cash-=300;p.pts+=2;lg(p,'Night market -NT$300, +2 pts.','逛夜市 -NT$300,生活點數 +2。');await ev(p,'🍢',nm,['Fried chicken and bubble tea! -NT$300, +2 lifestyle points.','鹽酥雞配珍奶!-NT$300,生活點數 +2。'])}
   else if(ty=='claim'){if(p.ins)p.pts+=1;
     lg(p,`Claim review: protected ${m(p.cl)}, premiums ${m(p.pd)}.`,`理賠檢視:已理賠 ${m(p.cl)},已繳保費 ${m(p.pd)}。`);
@@ -197,7 +279,7 @@ async function land(p){
 const sc=p=>p.cash+p.pts*50+(p.ins?5000:0);
 function finish(){
   busy=false;const s=G.P.map(sc),mx=Math.max(...s),w=G.P.filter((p,i)=>s[i]==mx);
-  const tie=w.length>1,wp=w[0];won=!tie&&!wp.ai;
+  const tie=w.length>1,wp=w[0];won=!tie&&!wp.ai;sfx(won?'win':'end');
   const title=tie?['Game Complete: Tie!','遊戲結束:平手!']:wp.ai?['Game Complete!','遊戲結束!']:[pn(wp)[0]+' Wins!',pn(wp)[1]+' 獲勝!'];
   modalFn=()=>modal(`<div class="text-center"><div class="text-5xl">${won?'🏆':'🏁'}</div><h2 class="text-2xl font-black mt-1">${L(title)}</h2>
   ${mode==1&&wp.ai&&!tie?`<p class="text-xs text-slate-400">${b('The AI scored higher this time. Try again!','這次 AI 分數較高,再試一次!')}</p>`:''}</div>
@@ -209,6 +291,7 @@ function finish(){
   <p class="text-[10px] text-slate-500 mt-2">${b('Score = Cash + Lifestyle × 50 + 5,000 if insured','總分 = 現金 + 生活點數 × 50 + 已投保 5,000')}</p>
   ${won?`<div class="mt-3 text-center text-xs font-bold rounded-lg py-1.5 bg-yellow-400 text-slate-900">🎟️ ${b('Claim 20% OFF First 3 Months Voucher','領取前 3 個月 8 折優惠券')}</div>`:''}
   <button onclick="portal(true)" class="w-full mt-2 py-3 rounded-xl font-extrabold text-white bg-red-600">${b('Go to Official Cardif Product Portal','前往 Cardif 官方產品專區')}</button>
+  <button onclick="shareResult()" class="w-full mt-2 py-3 rounded-xl font-extrabold text-white" style="background:#06c755">📲 ${b('Share Result to LINE Friends','分享成績給 LINE 好友')}</button>
   <button onclick="startM()" class="w-full mt-2 py-2.5 rounded-xl font-bold bg-slate-700">${b('Play again','再玩一次')}</button>`);
   modalFn()}
 
@@ -291,6 +374,52 @@ function calc(){
   ${cs.map(([k,c])=>{const r=Math.min(c,med);return `<div class="py-1.5 border-b border-neutral-200"><div class="font-bold">${k} (${m(c)})</div><div class="flex justify-between text-xs"><span class="text-green-700">${b('Payout','理賠')} ${m(r)}</span><span class="text-red-600">${b('You pay','自付')} ${m(c-r)}</span></div></div>`}).join('')}
   <div class="flex justify-between pt-2"><span>${b('Disability lump sum (10% grade)','失能一次金(10% 等級)')}</span><b>${m(LM*.1)}</b></div>`}
 
+/* ---------- Web Audio synth (no audio files) ---------- */
+let AC=null,muted=false;try{muted=localStorage.getItem('imMute')=='1'}catch(e){}
+function ac(){try{if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();if(AC.state=='suspended')AC.resume()}catch(e){}return AC}
+function tone(f,t0,d,type,v,f2){const a=ac();if(!a||muted)return;const o=a.createOscillator(),g=a.createGain(),t=a.currentTime+t0;
+  o.type=type||'sine';o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+d);
+  g.gain.setValueAtTime(v||.12,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g);g.connect(a.destination);o.start(t);o.stop(t+d+.02)}
+function noise(t0,d,v,fq,ty){const a=ac();if(!a||muted)return;const k=a.sampleRate*d|0,bf=a.createBuffer(1,k,a.sampleRate),x=bf.getChannelData(0);
+  for(let i=0;i<k;i++)x[i]=Math.random()*2-1;const sr=a.createBufferSource(),fl=a.createBiquadFilter(),g=a.createGain(),t=a.currentTime+t0;
+  sr.buffer=bf;fl.type=ty||'highpass';fl.frequency.value=fq;g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.001,t+d);
+  sr.connect(fl);fl.connect(g);g.connect(a.destination);sr.start(t)}
+const SFX={
+  lap(){[523,659,880].forEach((f,i)=>tone(f,i*.08,.3,'triangle',.1));tone(1175,.3,.5,'sine',.1)},
+  roll(){[0,.07,.15,.24,.35,.48,.62,.78].forEach(t=>{noise(t,.035,.2,2200+Math.random()*1500);tone(280+Math.random()*320,t,.03,'square',.04)})},
+  chime(){[880,1175,1568].forEach((f,i)=>tone(f,i*.09,.4,'sine',.12))},
+  thud(){tone(150,0,.4,'sine',.4,40);noise(0,.15,.25,300,'lowpass')},
+  shield(){tone(523,0,.5,'triangle',.12);tone(784,.1,.5,'triangle',.12);tone(1047,.2,.8,'sine',.1)},
+  win(){[523,659,784,1047].forEach((f,i)=>tone(f,i*.13,.22,'square',.07));[523,659,784,1047].forEach(f=>tone(f,.6,1,'triangle',.09))},
+  end(){[392,494,587].forEach((f,i)=>tone(f,i*.16,.25,'triangle',.1));[392,494,587,784].forEach(f=>tone(f,.55,.9,'triangle',.08))}};
+const SND={'🛡️':'shield','💥':'thud','🍀':'chime','💰':'chime','🎓':'chime','✅':'chime','🏥':'chime'};
+function sfx(k){try{if(SFX[k])SFX[k]()}catch(e){}}
+function mute(){muted=!muted;try{localStorage.setItem('imMute',muted?'1':'0')}catch(e){}ac();render()}
+
+/* ---------- LINE LIFF ---------- */
+const LIFF_ID='YOUR_LIFF_ID';let liffOK=false;
+async function initLiff(){try{if(!window.liff||LIFF_ID=='YOUR_LIFF_ID')throw 0;await liff.init({liffId:LIFF_ID});liffOK=true}catch(e){liffOK=false}}
+function result(){const s=G.P.map(sc),mx=Math.max(...s),w=G.P.filter((p,i)=>s[i]==mx),tie=w.length>1,wp=w[0];
+  return{s,won:!tie&&!wp.ai,title:tie?['Game Complete: Tie!','遊戲結束:平手!']:wp.ai?['Game Complete!','遊戲結束!']:[pn(wp)[0]+' Wins!',pn(wp)[1]+' 獲勝!']}}
+async function copyURL(u){try{await navigator.clipboard.writeText(u);return 1}catch(e){try{const t=document.createElement('textarea');t.value=u;document.body.appendChild(t);t.select();const ok=document.execCommand('copy');t.remove();return ok}catch(x){return 0}}}
+async function shareResult(){
+  const r=result(),url=(liffOK&&liff.permanentLink)?liff.permanentLink.createUrl():location.href.split('#')[0];
+  const rows=G.P.map((p,i)=>({type:'box',layout:'horizontal',contents:[{type:'text',text:L(pn(p))+(p.ins?' 🛡️':''),flex:3,size:'sm',color:'#111111'},{type:'text',text:n(r.s[i])+' '+b('pts','分'),flex:2,align:'end',size:'sm',weight:'bold',color:i?'#db2777':'#0891b2'}]}));
+  if(r.won)rows.push({type:'text',text:'🎟️ '+b('20% OFF first 3 months unlocked','前 3 個月 8 折已解鎖'),size:'xs',weight:'bold',color:'#cc0000',margin:'md',wrap:true});
+  const msg={type:'flex',altText:L(r.title)+' '+n(Math.max(...r.s))+' '+b('pts','分'),contents:{type:'bubble',size:'mega',
+    header:{type:'box',layout:'vertical',backgroundColor:'#111111',paddingAll:'16px',contents:[
+      {type:'text',text:'CARDIF × '+b('1-1 INSURANCE MONOPOLY','1-1 保險大富翁'),color:'#ffffff',size:'xs',weight:'bold'},
+      {type:'text',text:(r.won?'🏆 ':'🏁 ')+L(r.title),color:'#ffffff',size:'xl',weight:'bold',margin:'md',wrap:true}]},
+    body:{type:'box',layout:'vertical',spacing:'sm',paddingAll:'16px',contents:[
+      {type:'text',text:b('Final scoreboard','最終計分板'),size:'xs',color:'#888888'},...rows,{type:'separator',margin:'md'},
+      {type:'text',text:b('Cash + Lifestyle × 50 + 5,000 if insured','現金 + 生活點數 × 50 + 已投保 5,000'),size:'xxs',color:'#999999',wrap:true,margin:'md'}]},
+    footer:{type:'box',layout:'vertical',contents:[{type:'button',style:'primary',color:'#cc0000',height:'sm',action:{type:'uri',label:b('Beat my score','來挑戰我的分數'),uri:url}}]}}};
+  try{if(liffOK&&liff.isApiAvailable&&liff.isApiAvailable('shareTargetPicker')){
+      const res=await liff.shareTargetPicker([msg]);
+      if(res&&res.status=='success')toast(`<div class="font-bold">✅ ${b('Shared to LINE!','已分享到 LINE!')}</div>`);return}}catch(e){console.warn(e);}
+  const ok=await copyURL(url);
+  toast(`<div class="font-bold">🔗 ${ok?b('Link copied. Paste it into LINE!','已複製連結,貼到 LINE 分享吧!'):b('Copy this link: ','請複製連結:')+url}</div>`)}
+initLiff();
 render();startM();
 </script>
 </body>
