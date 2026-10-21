@@ -13,6 +13,7 @@ body{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset
 .gb{display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(5,1fr);gap:3px;aspect-ratio:1}
 .tile{position:relative;border-radius:8px;background:var(--panel);border:1px solid var(--line);border-top:3px solid var(--c);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:9px;line-height:1.15;text-align:center;padding:2px 1px 9px;overflow:hidden}
 .tile .ic{font-size:19px}
+.nm{font-size:8.5px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .tile.on{background:var(--on,#1b2650)}
 .tk{position:absolute;bottom:2px;left:0;right:0;display:flex;justify-content:center;gap:3px}
 .tk i{width:10px;height:10px;border-radius:50%;box-shadow:0 0 7px 2px currentColor;background:currentColor}
@@ -123,7 +124,7 @@ function pick(pool){
   return x}
 async function safe(p,T,nm){
   const fx=Math.random()<.6?pick(SF.filter(x=>!x.lp||x.lp.includes(lapOf(p)+1))):null;
-  if(!fx){lg(p,nm[0]+': safe.',nm[1]+':平安無事。');return ev(p,'✅',nm,T[5])}
+  if(!fx){lg(p,nm[0]+': safe.',nm[1]+':平安無事。');return ev(p,'✅',nm,T[5]||['You get through unharmed.','平安度過。'])}
   p.cash+=fx.cash||0;p.pts+=fx.pts||0;
   lg(p,fx.t[0]+(fx.cash?' +'+m(fx.cash):'')+(fx.pts?' +'+fx.pts+' pts':'')+'.',fx.t[1]+(fx.cash?' +'+m(fx.cash):'')+(fx.pts?' 生活點數 +'+fx.pts:'')+'。');
   return ev(p,'🍀',fx.t,fx.s)}
@@ -164,7 +165,35 @@ SF.push(
 {t:['Hustle Tip Jar','打工小費罐'],s:['The tip jar is full after a busy shift. +NT$400.','忙碌班表後小費罐滿滿,+NT$400。'],cash:400,lp:[2]},
 {t:['Resume Praise','履歷獲好評'],s:['A career advisor loves your resume and gives a workshop stipend. +NT$400.','職涯顧問大讚你的履歷,發給工作坊津貼 +NT$400。'],cash:400,lp:[3]},
 {t:['Graduation Photo Day','畢業照日'],s:['Friends, gowns and great photos. +2 lifestyle points.','和朋友穿學士服拍畢業照。生活點數 +2。'],pts:2,lp:[3]});
-function scPool(pos,l){const a=SC.filter(x=>x.lp.includes(l)&&(pos==2||x.at.includes(pos)));return a.length?a:SC.filter(x=>pos==2||x.at.includes(pos))}
+SC.push(
+{at:[],lp:[2],t:['Wet Kitchen Floor Slip','咖啡店廚房地板滑倒'],s:['You slip on a wet kitchen floor while carrying drinks and sprain your wrist.','端飲料時在濕滑的廚房地板滑倒,手腕扭傷。'],c:5500},
+{at:[],lp:[3],t:['Boxes Fall on Foot','紙箱砸傷腳'],s:['A stack of moving boxes tips over and crushes your foot. X-ray and treatment follow.','堆疊的搬家紙箱倒下砸傷腳,需要X光與治療。'],c:4200},
+{at:[],lp:[3],t:['Laptop Neck & Wrist Strain','長時間用電腦頸腕傷害'],s:['Marathon coding and writing sessions inflame your neck and wrist. Physiotherapy follows.','連續寫程式與論文,頸部與手腕發炎,需要物理治療。'],c:5200},
+{at:[],lp:[3],t:['Interview Rush Stair Fall','趕面試樓梯跌落'],s:['Sprinting to an interview, you miss a step at the station and tumble down the stairs.','趕面試衝刺時在車站踩空,從樓梯上摔下。'],c:6800});
+/* Per-lap board tiles: idx -> [type, icon, [name], prob (or amount for market), [scenario titles]] */
+const LT=[
+{1:['risk','🛵',['Scooter Commute','騎車通勤'],.2,['Pothole Wipeout After Night Class','Stray Dog Dash','Car Door Crash','Scooter Collision at Intersection']],
+ 4:['sport','🏀',['Late-Night Sports','夜間運動']],
+ 6:['gap','💸',['NHI Coverage Gap','健保自費缺口'],.3,['Night Market Food Poisoning','Cafeteria Wet Floor Slip','Dorm Ladder Fall']],
+ 8:['risk','🌧️',['Rainy Scooter Slip','雨天機車打滑'],.2,['Rainy Scooter Slip near YunTech','Scooter Collision at Intersection']],
+ 10:['risk','🦶',['Sports Injury','運動傷害'],.25,['Late-Night Basketball Ankle Sprain','Badminton Shoulder Strain','Morning Track Knee Pain']],
+ 11:['market','🍢',['Night Market -300','夜市小吃 -300'],300]},
+{1:['risk','🛵',['Food Delivery Shift Crash','外送打工車禍'],.22,['Delivery Shift Crash','Scooter Collision at Intersection']],
+ 4:['risk','☕',['Cafe Shift Burn','咖啡店打工燙傷'],.2,['Cafe Shift Burn','Wet Kitchen Floor Slip']],
+ 6:['gap','💸',['Urgent Outpatient Gap','急診門診自費缺口'],.3,['Seafood Hotpot Allergy','Night Market Food Poisoning']],
+ 8:['risk','☕',['All-Nighter Caffeine Crash','熬夜咖啡因崩潰'],.22,['Cram School Overwork & High Fever','Insomnia & Stomach Ulcer Flare','Migraine & Eye Strain']],
+ 10:['risk','😵',['Exam Anxiety & Chest Pain','考前焦慮與胸悶'],.22,['Stress Chest Pain Scare','Exam Anxiety Clinic Visit']],
+ 11:['market','🍜',['Cram Session Supper -400','苦讀宵夜 -400'],400]},
+{1:['risk','🛵',['Internship Interview Commute','實習面試通勤'],.25,['Internship Commute Crash','Scooter Collision at Intersection']],
+ 4:['risk','📦',['Dorm Moving Strain','宿舍搬家拉傷'],.22,['Moving Day Back Injury','Boxes Fall on Foot']],
+ 6:['gap','💸',['Specialist Self-Paid Gap','專科自費缺口'],.3,['Graduation Trip Food Poisoning','Seafood Hotpot Allergy','Migraine & Eye Strain']],
+ 8:['risk','💼',['Back-to-Back Interview Collapse','連環面試倒下'],.25,['Job-Hunt Sleepless Collapse','Interview Rush Stair Fall']],
+ 10:['risk','💻',['Thesis Overload & Spinal Injury','趕論文脊椎受傷'],.25,['Thesis Overload & Back Pain','Laptop Neck & Wrist Strain']],
+ 11:['market','🎓',['Graduation Celebration -500','畢業慶祝 -500'],500]}];
+const tileOf=(i,p)=>LT[lapOf(p)][i]||TL[i];
+function scPool(pos,l){const o=pos!=2&&LT[l-1][pos],k=o&&o[4];
+  if(k){const a=SC.filter(x=>k.includes(x.t[0]));if(a.length)return a}
+  const a=SC.filter(x=>x.lp.includes(l)&&(pos==2||x.at.includes(pos)));return a.length?a:SC.filter(x=>pos==2||x.at.includes(pos))}
 function lapBadge(){const p=G.P[G.t],l=LAPS[lapOf(p)];return `<div class="inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded-full text-[10px] font-bold" style="background:${l.c}22;color:${l.c};border:1px solid ${l.c}">${l.ic} ${L(l.n)}</div>`}
 let lT;
 function lapFx(p){if(p.laps>=3)return;const l=LAPS[p.laps],e=$('lapfx');sfx('lap');
@@ -183,8 +212,8 @@ function render(){
   if(!G){$('app').innerHTML=h;return}
   const cp=G.P[G.t];document.documentElement.dataset.lap=lapOf(cp)+1;
   h+=`<main class="p-2"><div class="gb">`;
-  TL.forEach((t,i)=>{const [r,c]=gp(i),here=G.P.filter(p=>p.pos==i);
-    h+=`<div class="tile ${here.some(p=>p===cp)?'on':''}" style="grid-area:${r}/${c};--c:${COL[t[0]]}"><span class="ic">${t[1]}</span><span>${L(t[2])}</span><span class="absolute top-0 left-1 text-[8px] text-slate-500">${i+1}</span><div class="tk">${here.map(p=>`<i style="color:${C[p.i-1]}"></i>`).join('')}</div></div>`});
+  TL.forEach((t0,i)=>{const t=tileOf(i,cp),[r,c]=gp(i),here=G.P.filter(p=>p.pos==i);
+    h+=`<div class="tile ${here.some(p=>p===cp)?'on':''}" style="grid-area:${r}/${c};--c:${COL[t[0]]}"><span class="ic">${t[1]}</span><span class="nm">${L(t[2])}</span><span class="absolute top-0 left-1 text-[8px] text-slate-500">${i+1}</span><div class="tk">${here.map(p=>`<i style="color:${C[p.i-1]}"></i>`).join('')}</div></div>`});
   h+=`<div class="rounded-xl bg-slate-900 border-2 flex flex-col items-center justify-center gap-1 p-2" style="grid-area:2/2/5/5;border-color:${C[G.t]}">
    <div class="text-[11px] text-slate-400">${b('Now rolling','目前回合')}</div>
    <div class="text-lg font-extrabold" style="color:${C[G.t]};text-shadow:0 0 10px ${C[G.t]}">${L(pn(cp))}</div>
@@ -213,7 +242,7 @@ function ev(p,ic,tt,bd){
   sfx(SND[ic]);
   if(!p.ai)return ask(ic,tt,bd,[[U.ok,1]]);
   const r=G.n>G.n0?L(G.log[0]).replace(/^[^:\uff1a]*[:\uff1a]\s*/,''):L(bd);
-  toast(`<div class="font-bold" style="color:${C[1]}">${ic} ${L(pn(p))} ${b('landed on','停在')} ${L(TL[p.pos][2])}</div><div class="text-xs text-slate-300 mt-0.5">${r}</div>`);
+  toast(`<div class="font-bold" style="color:${C[1]}">${ic} ${L(pn(p))} ${b('landed on','停在')} ${L(tileOf(p.pos,p)[2])}</div><div class="text-xs text-slate-300 mt-0.5">${r}</div>`);
   return sleep(600)}
 
 function startM(){modalFn=()=>modal(`<div class="text-center"><div class="text-5xl">🛡️🎲</div><h2 class="text-xl font-extrabold mt-2">${u('title')}</h2>
@@ -253,7 +282,7 @@ async function hit(p,pos){
     await ev(p,'💥',t,[story[0]+` No coverage: you pay ${m(c)} yourself.`,story[1]+` 未投保:你需自付 ${m(c)}。`])}
   render()}
 async function land(p){
-  G.n0=G.n||0;const T=TL[p.pos],ty=T[0],nm=T[2];
+  G.n0=G.n||0;const T=tileOf(p.pos,p),ty=T[0],nm=T[2];
   if(ty=='risk'||ty=='gap'){
     if(Math.random()<T[3]*G.rm*PM[lapOf(p)])await hit(p,p.pos);
     else await safe(p,T,nm);}
@@ -268,7 +297,7 @@ async function land(p){
   else if(ty=='safe'){p.pts+=2;lg(p,'Health Center check-up: +2 lifestyle pts.','健康中心檢查:生活點數 +2。');await ev(p,'🏥',nm,['Free basic care and a health check. Safe zone! +2 lifestyle points.','免費基礎診療與健康檢查,安全區!生活點數 +2。'])}
   else if(ty=='sport'){p.pts+=1;lg(p,'Night basketball: +1 lifestyle pt.','夜間打球:生活點數 +1。');await ev(p,'🏀',nm,['A fun late-night game with friends. +1 lifestyle point.','和朋友夜間打球很開心,生活點數 +1。'])}
   else if(ty=='job'){const a=Math.round(T[3]*JM[lapOf(p)]/100)*100;p.cash+=a;lg(p,`Part-time income +${m(a)}.`,`打工收入 +${m(a)}。`);await ev(p,'💰',nm,[`You earned ${m(a)}.`,`你賺到 ${m(a)}。`])}
-  else if(ty=='market'){p.cash-=300;p.pts+=2;lg(p,'Night market -NT$300, +2 pts.','逛夜市 -NT$300,生活點數 +2。');await ev(p,'🍢',nm,['Fried chicken and bubble tea! -NT$300, +2 lifestyle points.','鹽酥雞配珍奶!-NT$300,生活點數 +2。'])}
+  else if(ty=='market'){const a=T[3];p.cash-=a;p.pts+=2;lg(p,`${nm[0]}: -${m(a)}, +2 pts.`,`${nm[1]}:-${m(a)},生活點數 +2。`);await ev(p,T[1],nm,[`A treat to remember. -${m(a)}, +2 lifestyle points.`,`吃得開心,值得紀念。-${m(a)},生活點數 +2。`])}
   else if(ty=='claim'){if(p.ins)p.pts+=1;
     lg(p,`Claim review: protected ${m(p.cl)}, premiums ${m(p.pd)}.`,`理賠檢視:已理賠 ${m(p.cl)},已繳保費 ${m(p.pd)}。`);
     await ev(p,'📋',nm,p.ins?[`Financial review: Cardif has paid ${m(p.cl)} so far vs ${m(p.pd)} in premiums. +1 pt.`,`財務檢視:Cardif 已理賠 ${m(p.cl)},你已繳保費 ${m(p.pd)}。生活點數 +1。`]:['Financial review: no coverage active, so every accident comes out of your cash. Visit the Cardif Hub!','財務檢視:目前未投保,所有意外都得自掏腰包。快去 Cardif 保障站!'])}
