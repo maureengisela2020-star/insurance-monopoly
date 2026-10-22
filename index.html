@@ -245,11 +245,25 @@ function ev(p,ic,tt,bd){
   toast(`<div class="font-bold" style="color:${C[1]}">${ic} ${L(pn(p))} ${b('landed on','停在')} ${L(tileOf(p.pos,p)[2])}</div><div class="text-xs text-slate-300 mt-0.5">${r}</div>`);
   return sleep(600)}
 
-function startM(){modalFn=()=>modal(`<div class="text-center"><div class="text-5xl">🛡️🎲</div><h2 class="text-xl font-extrabold mt-2">${u('title')}</h2>
-<p class="text-sm text-slate-400 mt-1">${b('3 laps · NT$8,000 start · protect your cash!','3 圈賽制・起始 NT$8,000・守住你的錢包!')}</p>
-<button onclick="init(1)" class="w-full mt-4 py-3 rounded-xl font-bold bg-cyan-500 text-slate-900">🤖 ${b('1 Player vs AI','單人對戰 AI')}</button>
-<button onclick="init(2)" class="w-full mt-2 py-3 rounded-xl font-bold bg-pink-500 text-slate-900">👥 ${b('2 Players · Pass-and-Play','雙人同機輪流')}</button>
-<p class="text-[11px] mt-3"><span style="color:${C[0]}">● ${b('Player 1','玩家 1')}</span> &nbsp; <span style="color:${C[1]}">● ${b('Player 2 / AI','玩家 2 / AI')}</span></p></div>`);modalFn()}
+function startM(){modalFn=()=>modal(`<div class="text-center"><div class="text-5xl">🛡️🎲</div>
+<h2 class="text-xl font-extrabold mt-2 leading-snug">🛡️ 1-1 Insurance Monopoly<br>1-1 保險大富翁</h2>
+<p class="text-xs text-slate-400 mt-1">3 laps · NT$8,000 start / 3 圈賽制・起始 NT$8,000</p>
+<button onclick="rulesM(1)" class="w-full mt-4 py-3 px-3 rounded-xl font-bold text-sm bg-cyan-500 text-slate-900">🤖 1 Player vs AI / 單人對戰 AI</button>
+<button onclick="rulesM(2)" class="w-full mt-2 py-3 px-3 rounded-xl font-bold text-sm bg-pink-500 text-slate-900">👥 2 Players (Pass &amp; Play) / 雙人同機輪流</button>
+<p class="text-[11px] mt-3"><span style="color:${C[0]}">● Player 1 / 玩家 1</span> &nbsp; <span style="color:${C[1]}">● Player 2 or AI / 玩家 2 或 AI</span></p></div>`);modalFn()}
+function rulesM(k){modalFn=()=>modal(`<div class="flex items-center justify-between">
+  <button onclick="startM()" class="text-xs text-slate-400 px-2 py-1">← ${b('Back','返回')}</button>
+  <button onclick="tl()" aria-label="Language" class="flex text-xs font-bold rounded-full border border-slate-600 overflow-hidden"><span class="px-3 py-1 ${lang=='en'?'bg-cyan-500 text-slate-900':''}">EN</span><span class="px-3 py-1 ${lang=='zh'?'bg-cyan-500 text-slate-900':''}">中文</span></button></div>
+  <h2 class="text-xl font-extrabold text-center mt-2">📖 ${b('How to Play','遊戲規則')}</h2>
+  <p class="text-center text-xs text-slate-400 mt-1">${k==1?'🤖 '+b('1 Player vs AI','單人對戰 AI'):'👥 '+b('2 Players (Pass & Play)','雙人同機輪流')}</p>
+  <ul class="mt-4 space-y-2.5 text-sm leading-relaxed">${[
+   ['💰',['Start with NT$8,000 allowance. Passing START pays another NT$8,000.','起始資金 NT$8,000。每次經過起點再領 NT$8,000。']],
+   ['🔄',['Complete 3 Laps. The campus environment changes every lap!','完成 3 圈。校園環境每一圈都會改變!']],
+   ['🛡️',['Land on "Cardif Hub" to activate insurance for NT$200/lap.','踩到「Cardif 保障站」即可啟用保險,每圈 NT$200。']],
+   ['💥',['Accidents drain your cash. If insured, Cardif covers 100%.','意外會消耗你的現金。已投保時,Cardif 100% 理賠。']],
+   ['🏆',['Highest Score Wins! (Score = Cash + Lifestyle pts × 50 + Resilience Bonus of 5,000 if insured)','最高分獲勝!(總分 = 現金 + 生活點數 × 50 + 已投保的風險韌性加分 5,000)']]
+  ].map(r=>`<li class="flex gap-3 rounded-xl bg-slate-800 p-3"><span class="text-xl leading-none">${r[0]}</span><span>${L(r[1])}</span></li>`).join('')}</ul>
+  <button onclick="init(${k})" class="w-full mt-5 py-3.5 rounded-xl font-extrabold text-base bg-cyan-500 text-slate-900">▶ Start Game / 開始遊戲</button>`);modalFn()}
 function init(k){ac();mode=k;busy=false;
   G={P:[1,2].map(i=>({i,ai:k==1&&i==2,cash:8000,pos:0,laps:0,ins:false,pts:0,cl:0,pd:0,done:false})),t:0,d:0,log:[],used:[],rm:.8+Math.random()*.6};
   closeM();riskNote();lg(G.P[0],'Game start! NT$8,000 each.','遊戲開始!每人起始 NT$8,000。');render()}
