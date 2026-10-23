@@ -64,7 +64,7 @@ let lang='zh',mode=1,G=null,modalFn=null,busy=false,B=300,LM=500000,won=false;
 const L=a=>a[lang=='en'?0:1], b=(e,z)=>lang=='en'?e:z;
 
 // ★ Replace with real branch / advisor details
-const CFG={name:['Cardif Douliu Service Center','Cardif 斗六服務據點'],addr:['(Fill in address) Douliu City, Yunlin County','(請填入地址)雲林縣斗六市'],phone:'05-XXX-XXXX',lineId:'@your_advisor_id',
+const CFG={name:['Cardif Douliu Service Center','Cardif 斗六服務據點'],addr:['(Fill in address) Douliu City, Yunlin County','(請填入地址)雲林縣斗六市'],phone:'05-XXX-XXXX',lineId:'@your_advisor_id',   // ★ your LINE Official Account ID (with @)
   hours:['Mon–Fri 09:00–18:00','週一至週五 09:00–18:00']};
 
 const U={title:['1-1 Insurance Monopoly','1-1 保險大富翁'],lap:['Lap','第'],on:['Cardif ON','保障中'],off:['Uninsured','未投保'],roll:['Roll dice','擲骰子'],ok:['Continue','繼續'],aiTurn:['AI is rolling…','AI 擲骰中…'],log:['Activity log','活動紀錄']};
@@ -105,6 +105,7 @@ const SC=[
 {at:[12,6],t:['Migraine & Eye Strain','偏頭痛與眼睛疲勞'],s:['Days of screen time and cramming bring a pounding migraine. Neurology and eye clinic fees pile up.','連日盯螢幕和苦讀引發劇烈偏頭痛,神經內科與眼科費用累積。'],c:3200},
 {at:[6,14],t:['Seafood Hotpot Allergy','火鍋海鮮過敏'],s:['A seafood hotpot with friends triggers a sudden allergic reaction. Emergency room and observation.','和朋友吃海鮮火鍋突然過敏發作,送急診並留院觀察。'],c:6500},
 {at:[6,14],t:['Dorm Ladder Fall','宿舍床梯跌落'],s:['You miss a step on the dorm bunk ladder at night. Hip bruising and imaging tests.','半夜踩空宿舍上下鋪的梯子摔下,髖部挫傷並做影像檢查。'],c:9000}];
+// Harm severity is random: costs scale and are clamped to NT$3,000-12,000
 const SV=[['Minor','輕微',.55],['Moderate','中度',1],['Severe','嚴重',1.4]];
 const SF=[
 {t:['Near Miss!','驚險閃過!'],s:['You swerve just in time. Heart racing, but unharmed. +1 lifestyle point.','你及時閃開,心跳加速但毫髮無傷。生活點數 +1。'],pts:1},
@@ -115,6 +116,7 @@ const SF=[
 {t:['Tutoring Tip','家教小費'],s:['A parent adds a tip after your tutoring session. +NT$500.','家長在家教結束後多給了小費。+NT$500。'],cash:500},
 {t:['Lucky Raffle','校園抽獎'],s:['You win a meal voucher at the campus raffle. +NT$300.','你在校園抽獎抽中餐券。+NT$300。'],cash:300}];
 let SEEN=[];try{SEEN=JSON.parse(localStorage.getItem('imSeen')||'[]')}catch(e){}
+// Prefers scenarios not yet used this game, then ones never seen in earlier playthroughs
 function pick(pool){
   let c=pool.filter(x=>!G.used.includes(x.t[0]));if(!c.length)c=pool;
   const f=c.filter(x=>!SEEN.includes(x.t[0])),a=f.length?f:c,x=a[Math.floor(Math.random()*a.length)];
@@ -123,7 +125,7 @@ function pick(pool){
   return x}
 async function safe(p,T,nm){
   const fx=Math.random()<.6?pick(SF.filter(x=>!x.lp||x.lp.includes(lapOf(p)+1))):null;
-  if(!fx){lg(p,nm[0]+': safe.',nm[1]+':平安無事。');return ev(p,'✅',nm,T[5]||['You get through unharmed.','平安度過。 '})}
+  if(!fx){lg(p,nm[0]+': safe.',nm[1]+':平安無事。');return ev(p,'✅',nm,T[5]||['You get through unharmed.','平安度過。'])}
   p.cash+=fx.cash||0;p.pts+=fx.pts||0;
   lg(p,fx.t[0]+(fx.cash?' +'+m(fx.cash):'')+(fx.pts?' +'+fx.pts+' pts':'')+'.',fx.t[1]+(fx.cash?' +'+m(fx.cash):'')+(fx.pts?' 生活點數 +'+fx.pts:'')+'。');
   return ev(p,'🍀',fx.t,fx.s)}
@@ -136,6 +138,7 @@ const gp=i=>i<=4?[1,i+1]:i<=7?[i-3,5]:i<=12?[5,13-i]:[17-i,1];
 const cost=()=>Math.round((3000+Math.random()*9000)/100)*100;
 function lg(p,e,z){G.n=(G.n||0)+1;G.log.unshift([pn(p)[0]+': '+e,pn(p)[1]+':'+z]);G.log.length=Math.min(G.log.length,30)}
 
+/* ---------- Render ---------- */
 /* ---------- Dynamic lap system ---------- */
 const LAPS=[
  {ic:'🎒',c:'#06b6d4',n:['Lap 1: Campus Freshman','第 1 圈:校園新鮮人'],f:['Scooters, sports & campus life','騎車通勤、運動與校園適應']},
@@ -168,6 +171,7 @@ SC.push(
 {at:[],lp:[3],t:['Boxes Fall on Foot','紙箱砸傷腳'],s:['A stack of moving boxes tips over and crushes your foot. X-ray and treatment follow.','堆疊的搬家紙箱倒下砸傷腳,需要X光與治療。'],c:4200},
 {at:[],lp:[3],t:['Laptop Neck & Wrist Strain','長時間用電腦頸腕傷害'],s:['Marathon coding and writing sessions inflame your neck and wrist. Physiotherapy follows.','連續寫程式與論文,頸部與手腕發炎,需要物理治療。'],c:5200},
 {at:[],lp:[3],t:['Interview Rush Stair Fall','趕面試樓梯跌落'],s:['Sprinting to an interview, you miss a step at the station and tumble down the stairs.','趕面試衝刺時在車站踩空,從樓梯上摔下。'],c:6800});
+/* Per-lap board tiles: idx -> [type, icon, [name], prob (or amount for market), [scenario titles]] */
 const LT=[
 {1:['risk','🛵',['Scooter Commute','騎車通勤'],.2,['Pothole Wipeout After Night Class','Stray Dog Dash','Car Door Crash','Scooter Collision at Intersection']],
  4:['sport','🏀',['Late-Night Sports','夜間運動']],
@@ -258,7 +262,7 @@ function rulesM(k){modalFn=()=>modal(`<div class="flex items-center justify-betw
    ['🔄',['Complete 3 Laps. The campus environment changes every lap!','完成 3 圈。校園環境每一圈都會改變!']],
    ['🛡️',['Land on "Cardif Hub" to activate insurance for NT$200/lap.','踩到「Cardif 保障站」即可啟用保險,每圈 NT$200。']],
    ['💥',['Accidents drain your cash. If insured, Cardif covers 100%.','意外會消耗你的現金。已投保時,Cardif 100% 理賠。']],
-   ['🏆',['Highest Score Wins! (Winner unlocks 20% OFF for 3 months, all finishers unlock 10% OFF for 2 months).','最高分獲勝!(獲勝者解鎖前 3 個月 8 折，完成挑戰者皆享前 2 個月 9 折優惠)。']]
+   ['🏆',['Highest Score Wins! (Score = Cash + Lifestyle pts × 50 + Resilience Bonus of 5,000 if insured)','最高分獲勝!(總分 = 現金 + 生活點數 × 50 + 已投保的風險韌性加分 5,000)']]
   ].map(r=>`<li class="flex gap-3 rounded-xl bg-slate-800 p-3"><span class="text-xl leading-none">${r[0]}</span><span>${L(r[1])}</span></li>`).join('')}</ul>
   <button onclick="init(${k})" class="w-full mt-5 py-3.5 rounded-xl font-extrabold text-base bg-cyan-500 text-slate-900">▶ Start Game / 開始遊戲</button>`);modalFn()}
 function init(k){ac();mode=k;busy=false;
@@ -321,24 +325,16 @@ function finish(){
   busy=false;const s=G.P.map(sc),mx=Math.max(...s),w=G.P.filter((p,i)=>s[i]==mx);
   const tie=w.length>1,wp=w[0];won=!tie&&!wp.ai;sfx(won?'win':'end');
   const title=tie?['Game Complete: Tie!','遊戲結束:平手!']:wp.ai?['Game Complete!','遊戲結束!']:[pn(wp)[0]+' Wins!',pn(wp)[1]+' 獲勝!'];
-  
   modalFn=()=>modal(`<div class="text-center"><div class="text-5xl">${won?'🏆':'🏁'}</div><h2 class="text-2xl font-black mt-1">${L(title)}</h2>
   ${mode==1&&wp.ai&&!tie?`<p class="text-xs text-slate-400">${b('The AI scored higher this time. Try again!','這次 AI 分數較高,再試一次!')}</p>`:''}</div>
-  <div class="mt-3 space-y-2">${G.P.map((p,i)=>{
-    const isWinner = (!tie && p === wp);
-    return `<div class="rounded-xl p-3 bg-slate-800 border-2 text-xs" style="border-color:${C[i]}">
-      <div class="flex justify-between font-bold text-sm" style="color:${C[i]}"><span>${L(pn(p))} ${isWinner?'👑':''}</span><span>${n(s[i])} ${b('pts','分')}</span></div>
-      <div class="mt-1 text-slate-300 flex justify-between"><span>${b('Remaining cash','剩餘現金')}</span><span>${m(p.cash)}</span></div>
-      <div class="text-slate-300 flex justify-between"><span>${b('Lifestyle ','生活點數 ')}${p.pts} × 50</span><span>${n(p.pts*50)}</span></div>
-      <div class="text-slate-300 flex justify-between"><span>${b('Risk Resilience Bonus','風險韌性加分')}</span><span>${p.ins?'+5,000':'0'}</span></div>
-      <div class="text-slate-500 text-[10px] mt-1">${b('Claims paid','累計理賠')} ${m(p.cl)} · ${b('Premiums','累計保費')} ${m(p.pd)}</div>
-      <div class="mt-2 pt-2 border-t border-slate-700 font-bold ${isWinner?'text-yellow-400':'text-cyan-400'}">
-        🎟️ ${isWinner ? b('Unlocked: 20% OFF First 3 Months!','已解鎖:前 3 個月 8 折優惠！') : b('Unlocked: 10% OFF First 2 Months!','已解鎖:前 2 個月 9 折優惠！')}
-      </div>
-    </div>`;
-  }).join('')}</div>
+  <div class="mt-3 space-y-2">${G.P.map((p,i)=>`<div class="rounded-xl p-3 bg-slate-800 border-2 text-xs" style="border-color:${C[i]}"><div class="flex justify-between font-bold text-sm" style="color:${C[i]}"><span>${L(pn(p))}</span><span>${n(s[i])} ${b('pts','分')}</span></div>
+  <div class="mt-1 text-slate-300 flex justify-between"><span>${b('Remaining cash','剩餘現金')}</span><span>${m(p.cash)}</span></div>
+  <div class="text-slate-300 flex justify-between"><span>${b('Lifestyle ','生活點數 ')}${p.pts} × 50</span><span>${n(p.pts*50)}</span></div>
+  <div class="text-slate-300 flex justify-between"><span>${b('Risk Resilience Bonus','風險韌性加分')}</span><span>${p.ins?'+5,000':'0'}</span></div>
+  <div class="text-slate-500 text-[10px] mt-1">${b('Claims paid','累計理賠')} ${m(p.cl)} · ${b('Premiums','累計保費')} ${m(p.pd)}</div></div>`).join('')}</div>
   <p class="text-[10px] text-slate-500 mt-2">${b('Score = Cash + Lifestyle × 50 + 5,000 if insured','總分 = 現金 + 生活點數 × 50 + 已投保 5,000')}</p>
-  <button onclick="portal(true)" class="w-full mt-3 py-3 rounded-xl font-extrabold text-white bg-red-600">${b('Go to Official Cardif Product Portal','前往 Cardif 官方產品專區')}</button>
+  ${won?`<div class="mt-3 text-center text-xs font-bold rounded-lg py-1.5 bg-yellow-400 text-slate-900">🎟️ ${b('Claim 20% OFF First 3 Months Voucher','領取前 3 個月 8 折優惠券')}</div>`:''}
+  <button onclick="portal(true)" class="w-full mt-2 py-3 rounded-xl font-extrabold text-white bg-red-600">${b('Go to Official Cardif Product Portal','前往 Cardif 官方產品專區')}</button>
   <button onclick="shareResult()" class="w-full mt-2 py-3 rounded-xl font-extrabold text-white" style="background:#06c755">📲 ${b('Share Result to LINE Friends','分享成績給 LINE 好友')}</button>
   <button onclick="startM()" class="w-full mt-2 py-2.5 rounded-xl font-bold bg-slate-700">${b('Play again','再玩一次')}</button>`);
   modalFn()}
@@ -358,7 +354,7 @@ function portal(open){
     <div class="relative"><p class="text-xs text-neutral-400">${b('Cardif Youth Health','Cardif 青年健康保障')}</p>
     <h1 class="hd text-4xl leading-tight mt-2">${b('Ride on.<br>Stay covered.','放心騎。<br>安心學。')}</h1>
     <p class="text-sm text-neutral-300 mt-3 w-4/5">${b('Student accident and medical protection built for scooters, courts and late nights.','為機車通勤、球場與熬夜日常設計的學生意外與醫療保障。')}</p>
-    <div class="inline-block mt-4 bg-yellow-400 text-black text-xs font-black px-3 py-1.5">🎟️ ${b('Voucher Unlocked! Check your tier above.','優惠券已解鎖！請查看上方等級。')}</div>
+    ${won?`<div class="inline-block mt-4 bg-yellow-400 text-black text-xs font-black px-3 py-1.5">🎟️ ${b('20% OFF First 3 Months unlocked','前 3 個月 8 折已解鎖')}</div>`:''}
     <div><a href="#calc" class="inline-block mt-4 bg-red-600 px-5 py-2.5 text-sm font-bold">${b('Calculate my payout','試算我的理賠')}</a></div></div></section>
 
   <section class="px-5 py-8"><h2 class="hd text-2xl">${b('Youth Health Showcase','青年健康保障一覽')}</h2>
@@ -378,7 +374,7 @@ function portal(open){
 
   <section class="bg-red-600 text-white px-5 py-8"><h2 class="hd text-2xl">${b('Fast-Track Application','學生快速投保申請')}</h2>
   <p class="text-sm mt-2">${b('Four fields, under a minute. Your code and agent details arrive in LINE.','只要四個欄位,一分鐘完成。折扣碼與顧問資訊會傳到 LINE。')}</p>
-  <button onclick="applyM(true)" class="w-full mt-4 bg-black text-white font-black py-3.5 text-sm">${b('Submit Application & Lock Discount','送出申請並鎖定優惠')}</button></section>
+  <button onclick="applyM(true)" class="w-full mt-4 bg-black text-white font-black py-3.5 text-sm">${b('Submit Application & Lock 20% Discount','送出申請並鎖定 8 折優惠')}</button></section>
   <section class="px-5 py-8"><h2 class="hd text-2xl">${b('Douliu / Yunlin Advisor','斗六/雲林在地顧問')}</h2>
   <div class="mt-4 border-l-4 border-red-600 pl-4 text-sm space-y-1"><div class="font-black">${L(CFG.name)}</div><div>📍 ${L(CFG.addr)}</div><div>🕘 ${L(CFG.hours)}</div><div>📞 ${CFG.phone}</div></div>
   <div class="grid grid-cols-2 gap-2 mt-4"><a href="tel:${CFG.phone.replace(/[^0-9]/g,'')}" class="text-center bg-black text-white font-bold py-3 text-sm">${b('Call advisor','撥打專員')}</a>
@@ -391,30 +387,30 @@ function applyM(open){
   const fld=(k,lb,ph,ty)=>`<label class="block text-xs font-bold mt-3">${lb}<input value="${AP[k].replace(/"/g,'&quot;')}" oninput="AP.${k}=this.value" type="${ty||'text'}" ${ty=='tel'?'inputmode="numeric"':''} placeholder="${ph}" class="mt-1 w-full border-2 border-neutral-300 px-3 py-2.5 text-sm font-normal outline-none focus:border-red-600"></label>`;
   $('apply').innerHTML=`<div class="w-full max-w-[400px] max-h-[92vh] overflow-auto bg-white text-black p-5 border-t-4 border-red-600">`+(APcode?
   `<div class="text-center"><div class="text-5xl">✅</div><h3 class="hd text-2xl mt-2">${b('Application Submitted!','申請已送出!')}</h3>
-   <p class="text-sm mt-2 leading-relaxed">${b('Your Discount Code & Cardif Agent Contact Details have been sent to your LINE Chat.','您的專屬優惠碼與 Cardif 業務顧問聯絡資訊已傳送至您的 LINE 聊天室。')}</p>
+   <p class="text-sm mt-2 leading-relaxed">${b('Your 20% Discount Code & Cardif Agent Contact Details have been sent to your LINE Chat.','您的 8 折優惠碼與 Cardif 業務顧問聯絡資訊已傳送至您的 LINE 聊天室。')}</p>
    <div class="mt-4 bg-black text-white py-3 font-black tracking-widest text-xl">${APcode}</div>
    <div class="mt-4 border-l-4 border-red-600 pl-3 text-left text-xs space-y-1"><div class="font-black text-sm">${L(CFG.name)}</div><div>📞 ${CFG.phone}</div><div>🕘 ${L(CFG.hours)}</div></div>
    <button onclick="chatLine()" class="w-full mt-4 text-white font-black py-3 text-sm" style="background:#06c755">💬 ${b('Add Cardif advisor on LINE','加入 Cardif 顧問 LINE')}</button>
    <button onclick="$('apply').classList.add('hidden')" class="w-full mt-2 bg-red-600 text-white font-black py-3 text-sm">${b('Done','完成')}</button></div>`:
-  `<h3 class="hd text-2xl">${b('Fast-Track Student Application','學生快速投保申請')}</h3><p class="text-xs text-neutral-500 mt-1">${b('Lock your discount voucher.','鎖定您的專屬保費優惠。')}</p>
+  `<h3 class="hd text-2xl">${b('Fast-Track Student Application','學生快速投保申請')}</h3><p class="text-xs text-neutral-500 mt-1">${b('Lock your 20% discount for the first 3 months.','鎖定前 3 個月 8 折優惠。')}</p>
    ${fld('n',b('Name','姓名'),b('Full name','真實姓名'))}${fld('s',b('Student ID / School Name','學號/學校名稱'),b('e.g. B11023001 / YunTech','例:B11023001/雲林科技大學'))}${fld('m',b('Mobile Number','手機號碼'),'09XX-XXX-XXX','tel')}${fld('l',b('LINE ID','LINE ID'),'@your_line_id')}
    <div id="aperr" class="text-xs text-red-600 font-bold mt-3 min-h-[1rem]"></div>
-   <button onclick="submitApp()" class="w-full mt-2 bg-red-600 text-white font-black py-3 text-sm">${b('Submit Application & Lock Discount','送出申請並鎖定優惠')}</button>
+   <button onclick="submitApp()" class="w-full mt-2 bg-red-600 text-white font-black py-3 text-sm">${b('Submit Application & Lock 20% Discount','送出申請並鎖定 8 折優惠')}</button>
    <button onclick="$('apply').classList.add('hidden')" class="w-full mt-2 border-2 border-black font-bold py-2.5 text-sm">${b('Cancel','取消')}</button>`)+`</div>`}
 async function submitApp(){
   const ph=AP.m.replace(/[\s-]/g,'');let e='';
   if(!AP.n.trim()||!AP.s.trim()||!AP.l.trim())e=b('Please fill in all fields.','請填寫所有欄位。');
   else if(!/^09\d{8}$/.test(ph))e=b('Enter a valid mobile number (09XXXXXXXX).','請輸入正確手機號碼(09XXXXXXXX)。');
   if(e){$('aperr').textContent=e;return}
-  const r=result(), [p]=G.P.map((p,i)=>[p,i]).filter(x=>!x[0].ai).reduce((a,c)=>r.s[c[1]]>r.s[a[1]]?c:a);
-  const isWinner = (!r.tie && p && p === r.wp);
-  APcode=(isWinner?'CDF20-':'CDF10-')+Math.random().toString(36).slice(2,7).toUpperCase();
+  APcode='CDF20-'+Math.random().toString(36).slice(2,7).toUpperCase();
   if(!await sendApplication({name:AP.n.trim(),school:AP.s.trim(),mobile:ph,lineId:AP.l.trim(),code:APcode,userId:LP.userId||'',lang})){APcode=null;$('aperr').textContent=b('Could not submit. Please try again.','送出失敗,請再試一次。');return}
   applyM()}
+// ★ TODO: POST the application to your backend and push the code via LINE Messaging API.
+// Inside LIFF, this tries to drop the code into the chat; nothing is stored or sent elsewhere yet.
 async function sendApplication(d){
-  try{if(liffOK&&liff.isInClient()&&liff.getContext().type=='utou')await liff.sendMessages([{type:'text',text:'Cardif Discount code: '+d.code}])}catch(x){console.warn(x)}
+  try{if(liffOK&&liff.isInClient()&&liff.getContext().type=='utou')await liff.sendMessages([{type:'text',text:'Cardif 20% OFF code: '+d.code}])}catch(x){console.warn(x)}
   if(!API_URL)return true;
-  try{const res=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});return res.ok}catch(x){return false}}
+  try{const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});return r.ok}catch(x){return false}}
 function closeP(){$('portal').classList.add('hidden')}
 function calc(){
   const ap=Math.round(LM*.0004),rd=B-ap;$('bv').textContent=n(B);$('lv').textContent=n(LM);
@@ -426,7 +422,7 @@ function calc(){
   ${cs.map(([k,c])=>{const r=Math.min(c,med);return `<div class="py-1.5 border-b border-neutral-200"><div class="font-bold">${k} (${m(c)})</div><div class="flex justify-between text-xs"><span class="text-green-700">${b('Payout','理賠')} ${m(r)}</span><span class="text-red-600">${b('You pay','自付')} ${m(c-r)}</span></div></div>`}).join('')}
   <div class="flex justify-between pt-2"><span>${b('Disability lump sum (10% grade)','失能一次金(10% 等級)')}</span><b>${m(LM*.1)}</b></div>`}
 
-/* ---------- Web Audio synth ---------- */
+/* ---------- Web Audio synth (no audio files) ---------- */
 let AC=null,muted=false;try{muted=localStorage.getItem('imMute')=='1'}catch(e){}
 function ac(){try{if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();if(AC.state=='suspended')AC.resume()}catch(e){}return AC}
 function tone(f,t0,d,type,v,f2){const a=ac();if(!a||muted)return;const o=a.createOscillator(),g=a.createGain(),t=a.currentTime+t0;
@@ -449,9 +445,9 @@ function sfx(k){try{if(SFX[k])SFX[k]()}catch(e){}}
 function mute(){muted=!muted;try{localStorage.setItem('imMute',muted?'1':'0')}catch(e){}ac();render()}
 
 /* ---------- LINE LIFF ---------- */
-const LIFF_ID='YOUR_LIFF_ID';
-const GAME_URL='';
-const API_URL='';
+const LIFF_ID='YOUR_LIFF_ID';   // ★ your LIFF ID from LINE Developers Console
+const GAME_URL='';              // ★ the link shown after "Play here" (e.g. https://liff.line.me/<LIFF_ID> or your HTTPS site). Empty = auto-detect
+const API_URL='';               // ★ optional: your backend endpoint that receives applications
 let liffOK=false,LP={};
 function chatLine(){const id=CFG.lineId;
   if(/your_/.test(id)){toast(`<div class="font-bold">⚙️ ${b('Set CFG.lineId to your LINE Official Account ID','請先在 CFG.lineId 填入 LINE 官方帳號 ID')}</div>`);return}
@@ -460,8 +456,9 @@ function chatLine(){const id=CFG.lineId;
   window.open(u,'_blank')}
 async function initLiff(){try{if(!window.liff||LIFF_ID=='YOUR_LIFF_ID')throw 0;await liff.init({liffId:LIFF_ID});liffOK=true;if(liff.isLoggedIn())try{LP=await liff.getProfile()}catch(e){}}catch(e){liffOK=false}}
 function result(){const s=G.P.map(sc),mx=Math.max(...s),w=G.P.filter((p,i)=>s[i]==mx),tie=w.length>1,wp=w[0];
-  return{s,mx,wp,tie,won:!tie&&!wp.ai,title:tie?['Game Complete: Tie!','遊戲結束:平手!']:wp.ai?['Game Complete!','遊戲結束!']:[pn(wp)[0]+' Wins!',pn(wp)[1]+' 獲勝!']}}
+  return{s,won:!tie&&!wp.ai,title:tie?['Game Complete: Tie!','遊戲結束:平手!']:wp.ai?['Game Complete!','遊戲結束!']:[pn(wp)[0]+' Wins!',pn(wp)[1]+' 獲勝!']}}
 async function copyText(t){try{await navigator.clipboard.writeText(t);return 1}catch(e){try{const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();const ok=document.execCommand('copy');a.remove();return ok}catch(x){return 0}}}
+// Cute bilingual summary (always EN + ZH, regardless of the language toggle). Uses the best human player's stats.
 function shareText(r,url){
   const [p,i]=G.P.map((p,i)=>[p,i]).filter(x=>!x[0].ai).reduce((a,c)=>r.s[c[1]]>r.s[a[1]]?c:a),nm=pn(p);
   return `🌟 ${nm[0]} just completed the 1-1 Insurance Monopoly! 🌟\n`+
@@ -484,9 +481,11 @@ async function shareResult(){
       {type:'text',text:b('Final scoreboard','最終計分板'),size:'xs',color:'#888888'},...rows,{type:'separator',margin:'md'},
       {type:'text',text:b('Cash + Lifestyle × 50 + 5,000 if insured','現金 + 生活點數 × 50 + 已投保 5,000'),size:'xxs',color:'#999999',wrap:true,margin:'md'}]},
     footer:{type:'box',layout:'vertical',contents:[{type:'button',style:'primary',color:'#cc0000',height:'sm',action:{type:'uri',label:b('Beat my score','來挑戰我的分數'),uri:url}}]}}};
+  // 1) Inside LINE (LIFF): send the cute text message first, then the Flex card
   const can=liffOK&&liff.isLoggedIn()&&liff.isApiAvailable('shareTargetPicker');
   if(can){try{const res=await liff.shareTargetPicker([{type:'text',text:txt},flex]);
     if(res&&res.status=='success')toast(`<div class="font-bold">✅ ${b('Shared to LINE!','已分享到 LINE!')}</div>`);return}catch(e){console.warn(e)}}
+  // 2) Any other browser: open the LINE share sheet with the same text, and copy it to the clipboard
   const w=window.open('https://line.me/R/msg/text/?'+encodeURIComponent(txt),'_blank');
   const ok=await copyText(txt);
   toast(`<div class="font-bold">${w?'📲 '+b('Opening LINE… summary also copied','正在開啟 LINE…成績文字也已複製'):ok?'📋 '+b('Summary copied. Paste it into LINE!','成績文字已複製,貼到 LINE 分享吧!'):'⚠️ '+b('Could not copy. Please try again.','複製失敗,請再試一次。')}</div>`)}
