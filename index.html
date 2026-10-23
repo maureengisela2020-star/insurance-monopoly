@@ -64,7 +64,8 @@ let lang='zh',mode=1,G=null,modalFn=null,busy=false,B=300,LM=500000,won=false;
 const L=a=>a[lang=='en'?0:1], b=(e,z)=>lang=='en'?e:z;
 
 // ★ Replace with real branch / advisor details
-const CFG={name:['Cardif Douliu Service Center','Cardif 斗六服務據點'],addr:['(Fill in address) Douliu City, Yunlin County','(請填入地址)雲林縣斗六市'],phone:'05-XXX-XXXX',line:'https://line.me/R/ti/p/@your_advisor_id',hours:['Mon–Fri 09:00–18:00','週一至週五 09:00–18:00']};
+const CFG={name:['Cardif Douliu Service Center','Cardif 斗六服務據點'],addr:['(Fill in address) Douliu City, Yunlin County','(請填入地址)雲林縣斗六市'],phone:'05-XXX-XXXX',lineId:'@your_advisor_id',   // ★ your LINE Official Account ID (with @)
+  hours:['Mon–Fri 09:00–18:00','週一至週五 09:00–18:00']};
 
 const U={title:['1-1 Insurance Monopoly','1-1 保險大富翁'],lap:['Lap','第'],on:['Cardif ON','保障中'],off:['Uninsured','未投保'],roll:['Roll dice','擲骰子'],ok:['Continue','繼續'],aiTurn:['AI is rolling…','AI 擲骰中…'],log:['Activity log','活動紀錄']};
 const u=k=>L(U[k]);
@@ -377,7 +378,7 @@ function portal(open){
   <section class="px-5 py-8"><h2 class="hd text-2xl">${b('Douliu / Yunlin Advisor','斗六/雲林在地顧問')}</h2>
   <div class="mt-4 border-l-4 border-red-600 pl-4 text-sm space-y-1"><div class="font-black">${L(CFG.name)}</div><div>📍 ${L(CFG.addr)}</div><div>🕘 ${L(CFG.hours)}</div><div>📞 ${CFG.phone}</div></div>
   <div class="grid grid-cols-2 gap-2 mt-4"><a href="tel:${CFG.phone.replace(/[^0-9]/g,'')}" class="text-center bg-black text-white font-bold py-3 text-sm">${b('Call advisor','撥打專員')}</a>
-  <a href="${CFG.line}" target="_blank" rel="noopener" class="text-center bg-red-600 text-white font-bold py-3 text-sm">${b('Chat on LINE','LINE 諮詢')}</a></div>
+  <button onclick="chatLine()" class="text-center bg-red-600 text-white font-bold py-3 text-sm">${b('Chat on LINE','LINE 諮詢')}</button></div>
   <button onclick="closeP()" class="w-full mt-6 border-2 border-black font-black py-3 text-sm">${b('← Back to Game','← 返回遊戲')}</button></section></div>`;
   calc()}
 let AP={n:'',s:'',m:'',l:''},APcode=null;
@@ -389,23 +390,27 @@ function applyM(open){
    <p class="text-sm mt-2 leading-relaxed">${b('Your 20% Discount Code & Cardif Agent Contact Details have been sent to your LINE Chat.','您的 8 折優惠碼與 Cardif 業務顧問聯絡資訊已傳送至您的 LINE 聊天室。')}</p>
    <div class="mt-4 bg-black text-white py-3 font-black tracking-widest text-xl">${APcode}</div>
    <div class="mt-4 border-l-4 border-red-600 pl-3 text-left text-xs space-y-1"><div class="font-black text-sm">${L(CFG.name)}</div><div>📞 ${CFG.phone}</div><div>🕘 ${L(CFG.hours)}</div></div>
-   <button onclick="$('apply').classList.add('hidden')" class="w-full mt-5 bg-red-600 text-white font-black py-3 text-sm">${b('Done','完成')}</button></div>`:
+   <button onclick="chatLine()" class="w-full mt-4 text-white font-black py-3 text-sm" style="background:#06c755">💬 ${b('Add Cardif advisor on LINE','加入 Cardif 顧問 LINE')}</button>
+   <button onclick="$('apply').classList.add('hidden')" class="w-full mt-2 bg-red-600 text-white font-black py-3 text-sm">${b('Done','完成')}</button></div>`:
   `<h3 class="hd text-2xl">${b('Fast-Track Student Application','學生快速投保申請')}</h3><p class="text-xs text-neutral-500 mt-1">${b('Lock your 20% discount for the first 3 months.','鎖定前 3 個月 8 折優惠。')}</p>
    ${fld('n',b('Name','姓名'),b('Full name','真實姓名'))}${fld('s',b('Student ID / School Name','學號/學校名稱'),b('e.g. B11023001 / YunTech','例:B11023001/雲林科技大學'))}${fld('m',b('Mobile Number','手機號碼'),'09XX-XXX-XXX','tel')}${fld('l',b('LINE ID','LINE ID'),'@your_line_id')}
    <div id="aperr" class="text-xs text-red-600 font-bold mt-3 min-h-[1rem]"></div>
    <button onclick="submitApp()" class="w-full mt-2 bg-red-600 text-white font-black py-3 text-sm">${b('Submit Application & Lock 20% Discount','送出申請並鎖定 8 折優惠')}</button>
    <button onclick="$('apply').classList.add('hidden')" class="w-full mt-2 border-2 border-black font-bold py-2.5 text-sm">${b('Cancel','取消')}</button>`)+`</div>`}
-function submitApp(){
+async function submitApp(){
   const ph=AP.m.replace(/[\s-]/g,'');let e='';
   if(!AP.n.trim()||!AP.s.trim()||!AP.l.trim())e=b('Please fill in all fields.','請填寫所有欄位。');
   else if(!/^09\d{8}$/.test(ph))e=b('Enter a valid mobile number (09XXXXXXXX).','請輸入正確手機號碼(09XXXXXXXX)。');
   if(e){$('aperr').textContent=e;return}
   APcode='CDF20-'+Math.random().toString(36).slice(2,7).toUpperCase();
-  sendApplication({name:AP.n.trim(),school:AP.s.trim(),mobile:ph,lineId:AP.l.trim(),code:APcode});
+  if(!await sendApplication({name:AP.n.trim(),school:AP.s.trim(),mobile:ph,lineId:AP.l.trim(),code:APcode,userId:LP.userId||'',lang})){APcode=null;$('aperr').textContent=b('Could not submit. Please try again.','送出失敗,請再試一次。');return}
   applyM()}
 // ★ TODO: POST the application to your backend and push the code via LINE Messaging API.
 // Inside LIFF, this tries to drop the code into the chat; nothing is stored or sent elsewhere yet.
-function sendApplication(d){try{if(window.liff&&liff.isInApp&&liff.isInApp())liff.sendMessages([{type:'text',text:'Cardif 20% OFF code: '+d.code+' | '+CFG.phone}])}catch(x){console.warn(x)}}
+async function sendApplication(d){
+  try{if(liffOK&&liff.isInClient()&&liff.getContext().type=='utou')await liff.sendMessages([{type:'text',text:'Cardif 20% OFF code: '+d.code}])}catch(x){console.warn(x)}
+  if(!API_URL)return true;
+  try{const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});return r.ok}catch(x){return false}}
 function closeP(){$('portal').classList.add('hidden')}
 function calc(){
   const ap=Math.round(LM*.0004),rd=B-ap;$('bv').textContent=n(B);$('lv').textContent=n(LM);
@@ -440,16 +445,34 @@ function sfx(k){try{if(SFX[k])SFX[k]()}catch(e){}}
 function mute(){muted=!muted;try{localStorage.setItem('imMute',muted?'1':'0')}catch(e){}ac();render()}
 
 /* ---------- LINE LIFF ---------- */
-const LIFF_ID='YOUR_LIFF_ID';let liffOK=false;
-async function initLiff(){try{if(!window.liff||LIFF_ID=='YOUR_LIFF_ID')throw 0;await liff.init({liffId:LIFF_ID});liffOK=true}catch(e){liffOK=false}}
+const LIFF_ID='YOUR_LIFF_ID';   // ★ your LIFF ID from LINE Developers Console
+const API_URL='';               // ★ optional: your backend endpoint that receives applications
+let liffOK=false,LP={};
+function chatLine(){const id=CFG.lineId;
+  if(/your_/.test(id)){toast(`<div class="font-bold">⚙️ ${b('Set CFG.lineId to your LINE Official Account ID','請先在 CFG.lineId 填入 LINE 官方帳號 ID')}</div>`);return}
+  const u='https://line.me/R/ti/p/'+id;
+  try{if(liffOK&&liff.isInClient())return liff.openWindow({url:u,external:false})}catch(e){}
+  window.open(u,'_blank')}
+async function initLiff(){try{if(!window.liff||LIFF_ID=='YOUR_LIFF_ID')throw 0;await liff.init({liffId:LIFF_ID});liffOK=true;if(liff.isLoggedIn())try{LP=await liff.getProfile()}catch(e){}}catch(e){liffOK=false}}
 function result(){const s=G.P.map(sc),mx=Math.max(...s),w=G.P.filter((p,i)=>s[i]==mx),tie=w.length>1,wp=w[0];
   return{s,won:!tie&&!wp.ai,title:tie?['Game Complete: Tie!','遊戲結束:平手!']:wp.ai?['Game Complete!','遊戲結束!']:[pn(wp)[0]+' Wins!',pn(wp)[1]+' 獲勝!']}}
-async function copyURL(u){try{await navigator.clipboard.writeText(u);return 1}catch(e){try{const t=document.createElement('textarea');t.value=u;document.body.appendChild(t);t.select();const ok=document.execCommand('copy');t.remove();return ok}catch(x){return 0}}}
+async function copyText(t){try{await navigator.clipboard.writeText(t);return 1}catch(e){try{const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();const ok=document.execCommand('copy');a.remove();return ok}catch(x){return 0}}}
+// Cute bilingual summary (always EN + ZH, regardless of the language toggle). Uses the best human player's stats.
+function shareText(r,url){
+  const [p,i]=G.P.map((p,i)=>[p,i]).filter(x=>!x[0].ai).reduce((a,c)=>r.s[c[1]]>r.s[a[1]]?c:a),nm=pn(p);
+  return `🌟 ${nm[0]} just completed the 1-1 Insurance Monopoly! 🌟\n`+
+    `🌟 ${nm[1]} 完成了「1-1 保險大富翁」!🌟\n\n`+
+    `💰 Remaining Cash 剩餘現金: NT$ ${n(p.cash)}\n`+
+    `✨ Lifestyle Points 生活點數: ${p.pts}\n`+
+    `🛡️ Cardif Protection 保障狀態: ${p.ins?'Active 已啟用':'Inactive 未啟用'}\n`+
+    `🏆 Final Score 最終分數: ${n(r.s[i])} pts 分!\n\n`+
+    `Can you beat my score? Play here 來挑戰我的分數:\n${url} 🎲👇`}
 async function shareResult(){
   const r=result(),url=(liffOK&&liff.permanentLink)?liff.permanentLink.createUrl():location.href.split('#')[0];
+  const txt=shareText(r,url);
   const rows=G.P.map((p,i)=>({type:'box',layout:'horizontal',contents:[{type:'text',text:L(pn(p))+(p.ins?' 🛡️':''),flex:3,size:'sm',color:'#111111'},{type:'text',text:n(r.s[i])+' '+b('pts','分'),flex:2,align:'end',size:'sm',weight:'bold',color:i?'#db2777':'#0891b2'}]}));
   if(r.won)rows.push({type:'text',text:'🎟️ '+b('20% OFF first 3 months unlocked','前 3 個月 8 折已解鎖'),size:'xs',weight:'bold',color:'#cc0000',margin:'md',wrap:true});
-  const msg={type:'flex',altText:L(r.title)+' '+n(Math.max(...r.s))+' '+b('pts','分'),contents:{type:'bubble',size:'mega',
+  const flex={type:'flex',altText:L(r.title)+' '+n(Math.max(...r.s))+' '+b('pts','分'),contents:{type:'bubble',size:'mega',
     header:{type:'box',layout:'vertical',backgroundColor:'#111111',paddingAll:'16px',contents:[
       {type:'text',text:'CARDIF × '+b('1-1 INSURANCE MONOPOLY','1-1 保險大富翁'),color:'#ffffff',size:'xs',weight:'bold'},
       {type:'text',text:(r.won?'🏆 ':'🏁 ')+L(r.title),color:'#ffffff',size:'xl',weight:'bold',margin:'md',wrap:true}]},
@@ -457,11 +480,15 @@ async function shareResult(){
       {type:'text',text:b('Final scoreboard','最終計分板'),size:'xs',color:'#888888'},...rows,{type:'separator',margin:'md'},
       {type:'text',text:b('Cash + Lifestyle × 50 + 5,000 if insured','現金 + 生活點數 × 50 + 已投保 5,000'),size:'xxs',color:'#999999',wrap:true,margin:'md'}]},
     footer:{type:'box',layout:'vertical',contents:[{type:'button',style:'primary',color:'#cc0000',height:'sm',action:{type:'uri',label:b('Beat my score','來挑戰我的分數'),uri:url}}]}}};
-  try{if(liffOK&&liff.isApiAvailable&&liff.isApiAvailable('shareTargetPicker')){
-      const res=await liff.shareTargetPicker([msg]);
-      if(res&&res.status=='success')toast(`<div class="font-bold">✅ ${b('Shared to LINE!','已分享到 LINE!')}</div>`);return}}catch(e){console.warn(e);}
-  const ok=await copyURL(url);
-  toast(`<div class="font-bold">🔗 ${ok?b('Link copied. Paste it into LINE!','已複製連結,貼到 LINE 分享吧!'):b('Copy this link: ','請複製連結:')+url}</div>`)}
+  // 1) Inside LINE (LIFF): send the cute text message first, then the Flex card
+  const can=liffOK&&liff.isLoggedIn()&&liff.isApiAvailable('shareTargetPicker');
+  if(can){try{const res=await liff.shareTargetPicker([{type:'text',text:txt},flex]);
+    if(res&&res.status=='success')toast(`<div class="font-bold">✅ ${b('Shared to LINE!','已分享到 LINE!')}</div>`);return}catch(e){console.warn(e)}}
+  // 2) Any other browser: open the LINE share sheet with the same text, and copy it to the clipboard
+  const w=window.open('https://line.me/R/msg/text/?'+encodeURIComponent(txt),'_blank');
+  const ok=await copyText(txt);
+  toast(`<div class="font-bold">${w?'📲 '+b('Opening LINE… summary also copied','正在開啟 LINE…成績文字也已複製'):ok?'📋 '+b('Summary copied. Paste it into LINE!','成績文字已複製,貼到 LINE 分享吧!'):'⚠️ '+b('Could not copy. Please try again.','複製失敗,請再試一次。')}</div>`)}
+
 initLiff();
 render();startM();
 </script>
